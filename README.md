@@ -16,6 +16,5 @@
 # Education
 - University of Cincinnati
   - B.S. in Computer Science (2019 - 2024)
-  - Cincinnatus Century Scholarship recipient
-  - College of Engineering and Applied Science General Scholarship recipient
-  - GPA 3.50/4.00
+  - Cincinnatus Century Scholarship
+  - College of Engineering and Applied Science General Scholarship
