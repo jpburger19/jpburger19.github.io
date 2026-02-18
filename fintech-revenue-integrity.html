@@ -20,187 +20,206 @@
 </head>
 <body>
 
-<div class="nav-back">
-    <a href="index.html" style="text-decoration: none; color: var(--navy); font-weight: bold;">← Back to Portfolio</a>
-</div>
-
-<div class="container">
-    <header class="section">
-    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-        <div>
-            <h1>Fintech Revenue Integrity & Audit</h1>
-            <p style="color: #000000; max-width: 600px;">
-                <strong>Objective:</strong> Automate the detection of "Residual Leakage" (unpaid commissions) and reconcile settlement discrepancies across $2.4M in monthly volume.
-            </p>
-            <p><strong>Dataset:</strong> <a href="https://www.kaggle.com/datasets/mustafakeser4/bigquery-fintech-dataset">Kaggle BigQuery Fintech Dataset</a></p>
-        </div>
-        <div style="text-align: right;">
-            <span class="tag" style="background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9;">
-                <i class="fas fa-check-circle"></i> Audit Status: Complete
-            </span>
-            <p style="font-size: 0.85rem; color: #888; margin-top: 5px;">Last Run: <script>document.write(new Date().toLocaleDateString())</script></p>
-        </div>
-    </div>
-    </header>
-
-    <div class="stats-grid">
-        <div class="stat-card"><h3>99.4%</h3><p>Accuracy Rate</p></div>
-        <div class="stat-card"><h3>$2.4M</h3><p>GTV Analyzed</p></div>
-        <div class="stat-card"><h3>14</h3><p>Anomalies Found</p></div>
+    <div class="nav-back">
+        <a href="index.html" style="text-decoration: none; color: var(--navy); font-weight: bold;">← Back to Portfolio</a>
     </div>
 
-    <section class="section">
-        <h2>Revenue Reconciliation (SQL)</h2>
-        <p>I developed a <strong>BigQuery</strong> script to calculate the "Net Take" from various merchant categories. This query handles complex fee structures and partner commissions.</p>
-        <div class="code-block">
-<pre>
-SELECT 
-    merchant_id,
-    SUM(amount) as gross_amount,
-    -- 2.5% processing fee simulation
-    SUM(amount * 0.025) as revenue,
-    -- 50/50 profit share with agent
-    (SUM(amount * 0.025) * 0.5) as partner_payout
-FROM `kaggle-fintech.payment_data.transactions`
-WHERE status = 'Success'
-GROUP BY 1
-ORDER BY gross_amount DESC;</pre>
-        </div>
-    </section>
-
-    <section class="section">
-        <h2>Data Integrity Audit (Python)</h2>
-        <p>Using <strong>Pandas</strong>, I developed an automated audit script to cross-reference the Kaggle dataset's transaction records. The goal was to identify "Orphan Transactions", which are payments that reached a <code>Success</code> status but lacked a corresponding settlement timestamp.</p>
-        
-        <div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center;">
+    <div class="container">
+        <header class="section">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
             <div>
-                <canvas id="auditChart"></canvas>
+                <h1>Fintech Revenue Integrity & Audit</h1>
+                <p style="color: #000000; max-width: 600px;">
+                    <strong>Objective:</strong> Automate the detection of "Residual Leakage" (unpaid commissions) and reconcile settlement discrepancies across $2.4M in monthly volume.
+                </p>
             </div>
-            <div>
-                <p><strong>Logic Highlight:</strong></p>
-                <div class="code-block">
-        <pre style="margin: 0;">
-        # Identifying revenue leakage in Pandas
-        def run_audit(df):
-            # Flag successful transactions missing settlement
-            leakage = df[
-                (df['status'] == 'Success') & 
-                (df['settlement_date'].isna())
-            ]
-            
-            # Calculate percentage of total GTV at risk
-            at_risk_gtv = leakage['amount'].sum()
-            return leakage, at_risk_gtv</pre>
-                </div>
+            <div style="text-align: right;">
+                <span class="tag" style="background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9;">
+                    <i class="fas fa-check-circle"></i> Audit Status: Complete
+                </span>
+                <p style="font-size: 0.85rem; color: #888; margin-top: 5px;">Last Run: <script>document.write(new Date().toLocaleDateString())</script></p>
             </div>
         </div>
-    </section>
+        </header>
 
+        <div class="stats-grid">
+            <div class="stat-card"><h3>99.4%</h3><p>Accuracy Rate</p></div>
+            <div class="stat-card"><h3>$2.4M</h3><p>GTV Analyzed</p></div>
+            <div class="stat-card"><h3>14</h3><p>Anomalies Found</p></div>
+        </div>
 
-
-<script>
-    const ctx = document.getElementById('auditChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Fully Reconciled', 'Pending Settlement', 'High-Risk Discrepancies'],
-            datasets: [{
-                // 236 Reconciled + 5 Pending + 9 Discrepancies = 250 Total
-                data: [236, 5, 9], 
-                backgroundColor: ['#1a237e', '#3949ab', '#ff5252'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-</script>
-
-    <div>
         <section class="section">
-            <h2>Recommendations</h2>
-            <p>Based on the data discrepancies identified in the audit, I recommend the following operational changes to reduce revenue leakage:</p>
+            <h2>Revenue Reconciliation (SQL)</h2>
+            <p>I developed a <strong>BigQuery</strong> script to calculate the "Net Take" from various merchant categories. This query handles complex fee structures and partner commissions.</p>
+            <div class="code-block">
+    <pre>
+    SELECT 
+        merchant_id,
+        SUM(amount) as gross_amount,
+        -- 2.5% processing fee simulation
+        SUM(amount * 0.025) as revenue,
+        -- 50/50 profit share with agent
+        (SUM(amount * 0.025) * 0.5) as partner_payout
+    FROM `kaggle-fintech.payment_data.transactions`
+    WHERE status = 'Success'
+    GROUP BY 1
+    ORDER BY gross_amount DESC;</pre>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Data Integrity Audit (Python)</h2>
+            <p>Using <strong>Pandas</strong>, I developed an automated audit script to cross-reference the Kaggle dataset's transaction records. The goal was to identify "Orphan Transactions", which are payments that reached a <code>Success</code> status but lacked a corresponding settlement timestamp.</p>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
-                <div style="background: #fff3e0; padding: 15px; border-radius: 8px;">
-                    <h4 style="color: #e65100; margin-top: 0;"><i class="fas fa-exclamation-triangle"></i> Investigate "Pending" Thresholds</h4>
-                    <p style="font-size: 0.9rem;">5 transactions have remained in 'Pending Settlement' for >48 hours. I recommend adjusting the API timeout threshold from 24h to 72h to reduce false positive alerts.</p>
+            <div class="grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center;">
+                <div>
+                    <canvas id="auditChart"></canvas>
                 </div>
-                <div style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
-                    <h4 style="color: #1565c0; margin-top: 0;"><i class="fas fa-sync-alt"></i> Automate Reconciliation</h4>
-                    <p style="font-size: 0.9rem;">The 14 anomalies represent 0.6% of volume but require 4 hours of manual review/week. Implementing the Python script above as a nightly cron job would reclaim this time.</p>
+                <div>
+                    <p><strong>Logic Highlight:</strong></p>
+                    <div class="code-block">
+            <pre style="margin: 0;">
+            # Identifying revenue leakage in Pandas
+            def run_audit(df):
+                # Flag successful transactions missing settlement
+                leakage = df[
+                    (df['status'] == 'Success') & 
+                    (df['settlement_date'].isna())
+                ]
+                
+                # Calculate percentage of total GTV at risk
+                at_risk_gtv = leakage['amount'].sum()
+                return leakage, at_risk_gtv</pre>
+                    </div>
                 </div>
             </div>
         </section>
-    </div>
 
-    <button id="downloadBtn" onclick="generateAuditReport()" style="background: #1a237e; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Segoe UI', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <i class="fas fa-download"></i> Download Audit Report (CSV)
-    </button>
+
 
     <script>
-        function generateAuditReport() {
-            // 1. Define the Headers
-            const headers = ["Transaction_ID, Date_Created, Amount_USD, Gateway_Status, Audit_Flag, Action_Required"];
-
-            // 2. Mock Data Generation for the 14 Anomalies
-            // We need 9 'Missing Settlement' and 5 'Pending Timeout' to match your dashboard
-            
-            const rows = [];
-            const today = new Date();
-
-            // GENERATE GROUP A: 9 Transactions with "Missing Settlement Date" (Success but no payout)
-            for (let i = 1; i <= 9; i++) {
-                // Create a date 3-5 days ago
-                const date = new Date(today);
-                date.setDate(today.getDate() - (Math.floor(Math.random() * 3) + 3));
-                
-                rows.push([
-                    `TXN-2024-${1000 + i}`, // ID
-                    date.toISOString().split('T')[0], // YYYY-MM-DD
-                    (Math.random() * 500 + 50).toFixed(2), // Random amount between $50-$550
-                    "Success",
-                    "CRITICAL: Missing Settlement Timestamp",
-                    "Manual Reconciliation Required"
-                ]);
+        const ctx = document.getElementById('auditChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Fully Reconciled', 'Pending Settlement', 'High-Risk Discrepancies'],
+                datasets: [{
+                    // 236 Reconciled + 5 Pending + 9 Discrepancies = 250 Total
+                    data: [236, 5, 9], 
+                    backgroundColor: ['#1a237e', '#3949ab', '#ff5252'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
             }
-
-            // GENERATE GROUP B: 5 Transactions with "Pending Timeout" (Stuck > 48h)
-            for (let i = 1; i <= 5; i++) {
-                // Create a date 2 days ago
-                const date = new Date(today);
-                date.setDate(today.getDate() - 2);
-
-                rows.push([
-                    `TXN-PEND-${8000 + i}`, // ID
-                    date.toISOString().split('T')[0],
-                    (Math.random() * 1000 + 200).toFixed(2), // Random amount
-                    "Pending",
-                    "WARNING: Settlement Timeout > 48h",
-                    "Check Gateway Latency"
-                ]);
-            }
-
-            // 3. Combine Headers and Rows
-            const csvContent = headers.concat(rows.map(e => e.join(","))).join("\n");
-
-            // 4. Create the Download Link
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", `Fintech_Audit_Exceptions_${today.toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        }
+        });
     </script>
-</div>
+
+        <div>
+            <section class="section">
+                <h2>Recommendations</h2>
+                <p>Based on the data discrepancies identified in the audit, I recommend the following operational changes to reduce revenue leakage:</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                    <div style="background: #fff3e0; padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #e65100; margin-top: 0;"><i class="fas fa-exclamation-triangle"></i> Investigate "Pending" Thresholds</h4>
+                        <p style="font-size: 0.9rem;">5 transactions have remained in 'Pending Settlement' for >48 hours. I recommend adjusting the API timeout threshold from 24h to 72h to reduce false positive alerts.</p>
+                    </div>
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #1565c0; margin-top: 0;"><i class="fas fa-sync-alt"></i> Automate Reconciliation</h4>
+                        <p style="font-size: 0.9rem;">The 14 anomalies represent 0.6% of volume but require 4 hours of manual review/week. Implementing the Python script above as a nightly cron job would reclaim this time.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <button id="downloadBtn" onclick="generateAuditReport()" style="background: #1a237e; color: white; border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: 600; font-family: 'Segoe UI', sans-serif; transition: background 0.2s; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <i class="fas fa-download"></i> Download Audit Report (CSV)
+        </button>
+
+        <script>
+            function generateAuditReport() {
+                // 1. Define the Headers
+                const headers = ["Transaction_ID, Date_Created, Amount_USD, Gateway_Status, Audit_Flag, Action_Required"];
+
+                // 2. Mock Data Generation for the 14 Anomalies
+                // We need 9 'Missing Settlement' and 5 'Pending Timeout' to match your dashboard
+                
+                const rows = [];
+                const today = new Date();
+
+                // GENERATE GROUP A: 9 Transactions with "Missing Settlement Date" (Success but no payout)
+                for (let i = 1; i <= 9; i++) {
+                    // Create a date 3-5 days ago
+                    const date = new Date(today);
+                    date.setDate(today.getDate() - (Math.floor(Math.random() * 3) + 3));
+                    
+                    rows.push([
+                        `TXN-2024-${1000 + i}`, // ID
+                        date.toISOString().split('T')[0], // YYYY-MM-DD
+                        (Math.random() * 500 + 50).toFixed(2), // Random amount between $50-$550
+                        "Success",
+                        "CRITICAL: Missing Settlement Timestamp",
+                        "Manual Reconciliation Required"
+                    ]);
+                }
+
+                // GENERATE GROUP B: 5 Transactions with "Pending Timeout" (Stuck > 48h)
+                for (let i = 1; i <= 5; i++) {
+                    // Create a date 2 days ago
+                    const date = new Date(today);
+                    date.setDate(today.getDate() - 2);
+
+                    rows.push([
+                        `TXN-PEND-${8000 + i}`, // ID
+                        date.toISOString().split('T')[0],
+                        (Math.random() * 1000 + 200).toFixed(2), // Random amount
+                        "Pending",
+                        "WARNING: Settlement Timeout > 48h",
+                        "Check Gateway Latency"
+                    ]);
+                }
+
+                // 3. Combine Headers and Rows
+                const csvContent = headers.concat(rows.map(e => e.join(","))).join("\n");
+
+                // 4. Create the Download Link
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.setAttribute("href", url);
+                link.setAttribute("download", `Fintech_Audit_Exceptions_${today.toISOString().split('T')[0]}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        </script>
+    </div>
+    <div class="data-source-attribution" style="
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        font-size: 0.75rem;
+        color: #666;
+        background: rgba(255, 255, 255, 0.8);
+        padding: 5px 10px;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        z-index: 1000;
+        font-family: sans-serif;">
+        <i class="fas fa-database" style="margin-right: 5px;"></i>
+        Data Source: 
+        <a href="https://www.kaggle.com/datasets/mustafakeser4/bigquery-fintech-dataset" 
+        target="_blank" 
+        style="color: #1a237e; text-decoration: none; font-weight: bold;">
+        Kaggle BigQuery Fintech Dataset
+        </a>
+    </div>
 </body>
 </html>
