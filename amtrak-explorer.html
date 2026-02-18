@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Amtrak Tracker - North America</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #0b0b0b; font-family: sans-serif; }
+        
+        #map { height: 100vh; width: 100vw; opacity: 0; transition: opacity 0.8s ease-in; }
+        
+        /* Loading Overlay */
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0b0b0b; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 9999;
+            color: #00ccff;
+        }
+
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #333;
+            border-top: 4px solid #00ccff; border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 15px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Label styling */
+        .custom-tooltip {
+            background: #222 !important;
+            color: #00ccff !important;
+            border: 1px solid #00ccff !important;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 5px 10px;
+            box-shadow: 0 0 15px rgba(0,204,255,0.4);
+        }
+
+        /* Footer Styling */
+        #footer {
+            position: absolute;
+            bottom: 20px; /* Elevated slightly to clear map borders */
+            left: 10px;
+            z-index: 1000; 
+            background: rgba(11, 11, 11, 0.85);
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #0066ff;
+            font-size: 11px;
+            color: #ccc;
+            pointer-events: auto;
+        }
+
+        #footer a {
+            color: #00ccff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        #footer a:hover {
+            text-decoration: underline;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="spinner"></div>
+        <div>LOADING AMTRAK NETWORK...</div>
+    </div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // 1. Initialize Map
+        const map = L.map('map', {
+            minZoom: 3,
+            maxBounds: [[5.0, -170.0], [83.0, -45.0]],
+            maxBoundsViscosity: 1.0
+        }).setView([39.8, -98.5], 4);
+
+        // Add the data link directly to the attribution string
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap | <a href="https://opendata.arcgis.com/datasets/usdot::amtrak-routes.geojson" target="_blank">USDOT Amtrak Routes</a>'
+        }).addTo(map);
+
+        const routeStyle = { "color": "#0066ff", "weight": 3, "opacity": 0.6 };
+
+        // 2. Load the data
+        const amtrakUrl = "https://opendata.arcgis.com/datasets/usdot::amtrak-routes.geojson";
+
+        fetch(amtrakUrl)
+            .then(res => res.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    style: routeStyle,
+                    onEachFeature: function (feature, layer) {
+                        
+                        // Robust Name Finding Logic:
+                        // This checks for common column names found in DOT/Amtrak datasets
+                        const p = feature.properties;
+                        const potentialName = p.NAME || p.name || p.Route || p.SERVICE || p.RouteName || "Amtrak Line";
+
+                        // Create the Hover Label
+                        layer.bindTooltip(potentialName, {
+                            sticky: true,
+                            className: 'custom-tooltip',
+                            opacity: 1.0
+                        });
+
+                        // Visual interaction
+                        layer.on('mouseover', function() {
+                            this.setStyle({ color: '#00ccff', weight: 8, opacity: 1 });
+                            this.bringToFront();
+                        });
+                        layer.on('mouseout', function() {
+                            this.setStyle(routeStyle);
+                        });
+                    }
+                }).addTo(map);
+
+                // 3. DATA LOADED: Hide the loader and show the map
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('map').style.opacity = '1';
+            })
+            .catch(err => {
+                document.getElementById('loader').innerHTML = "Error loading rail data. Please check your connection.";
+                console.error(err);
+            });
+    </script>
+</body>
+</html>
