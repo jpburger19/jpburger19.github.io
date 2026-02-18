@@ -1,20 +1,14 @@
-# About Me
-##### A software engineer with over 3 years of hands-on experience in Agile development and a passion for technology. My undergraduate program allowed me to gain valuable experience through several internships with different companies, which provided me with a wide array of challenges to strengthen my software engineering skills. I recently relocated to the PNW, and I am seeking a full-time remote position in the Software Engineering, Quality Assurance, and/or Data Analytics field.
+# FinTech Data Analytics: Payment Ops & Revenue Integrity
 
-# Work Experience
-##### My work experience can be viewed on my [LinkedIn](https://www.linkedin.com/in/jp-burger-2a71b41a7/)
+### **Overview**
+A comprehensive data project simulating the daily responsibilities of a **FinTech Data Analyst**. This project focuses on transaction reconciliation, revenue sharing models, and operational efficiency metrics.
 
-# Skills
-- Programming Languages: Python, Go, SQL, TypeScript, JavaScript, HTML, C++, Java
-- Frameworks: Angular, React
-- Microsoft Office applications
-- Development Environments: Microsoft Windows, macOS, Linux
-- Database Management Systems: MS SQL Server, MySQL
-- Version Control Systems and CI/CD: GitHub, GitLabs, Azure DevOps
-- Cloud Services: AWS, GCP, Microsoft Azure
+### **Core Data Modules**
+1.  **Revenue Reconciliation (SQL):** Automated calculation of net-take rates, interchange costs, and multi-party commission splits.
+2.  **Audit & Integrity (Python):** A reconciliation engine designed to identify "orphan" transactions between internal ledgers and banking partner statements.
+3.  **Operations Dashboard (HTML/JS):** A stakeholder-facing visualization tool monitoring Transaction Success Rates (TSR) and Volume trends.
 
-# Education
-- University of Cincinnati
-  - B.S. in Computer Science (2019 - 2024)
-  - Cincinnatus Century Scholarship
-  - College of Engineering and Applied Science General Scholarship
+### **Industry Competencies Shown**
+* **FinTech Domain Knowledge:** Understanding of Interchange, GTV (Gross Transaction Volume), and Settlement cycles.
+* **Technical Stack:** Advanced SQL (Window Functions & CTEs), Python (Pandas for ETL), and Data Visualization.
+* **Problem Solving:** Identifying revenue leakage and improving data transparency between technical and financial teams.
