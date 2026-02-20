@@ -89,143 +89,114 @@
     </div>
 
     <script>
-        const CSV_URL = "data/chess_games.csv";
+        const CSV_URL = "chess_games.csv";
 
         Papa.parse(CSV_URL, {
             download: true,
             header: true,
             dynamicTyping: true,
             skipEmptyLines: true,
-            // Safety: Trim and lowercase headers to prevent case-sensitivity issues
-            transformHeader: h => h.trim().toLowerCase(),
             complete: function(results) {
                 if (results.data && results.data.length > 0) {
-                    console.log("Data loaded successfully. Rows:", results.data.length);
+                    // Check if headers actually exist
+                    console.log("Headers detected:", Object.keys(results.data[0]));
                     processAndRender(results.data);
                 } else {
-                    document.getElementById('status').innerText = "Error: CSV file is empty or could not be parsed.";
+                    document.getElementById('status').innerText = "Error: No data found in CSV.";
                 }
             },
             error: function(err) {
-                document.getElementById('status').innerText = "Fetch Error: Ensure the CSV file is in the same folder and named correctly.";
-                console.error(err);
+                document.getElementById('status').innerText = "File Error: Ensure chess_games.csv is in the root folder.";
             }
         });
 
         function processAndRender(data) {
-            // Hide loader, show dashboard
             document.getElementById('status').style.display = 'none';
             document.getElementById('dashboard').style.opacity = '1';
 
-            // --- 1. WIN PERCENTAGES & DRAWS ---
-            let wWins = 0, bWins = 0, draws = 0;
-            data.forEach(d => {
-                if (d.winner === 'white') wWins++;
-                else if (d.winner === 'black') bWins++;
-                else draws++;
-            });
-            const total = data.length;
-            document.getElementById('q1-text').innerText = 
-                `White Wins: ${((wWins/total)*100).toFixed(1)}% | Draws: ${draws}`;
+            // Helper to find column name regardless of case/spaces
+            const getCol = (obj, name) => {
+                const key = Object.keys(obj).find(k => k.trim().toLowerCase() === name.toLowerCase());
+                return obj[key];
+            };
 
+            let wWins = 0, bWins = 0, draws = 0;
+            let moveMap = { white: {}, black: {} };
+            let hrWins = 0, decisiveTotal = 0, wAdvWins = 0, wAdvTotal = 0, bAdvWins = 0, bAdvTotal = 0;
+            let players = {};
+
+            data.forEach(d => {
+                // Extract core values using the helper
+                const winner = String(getCol(d, 'winner')).toLowerCase();
+                const moves = String(getCol(d, 'moves') || "");
+                const wR = Number(getCol(d, 'white_rating'));
+                const bR = Number(getCol(d, 'black_rating'));
+                const wId = getCol(d, 'white_id');
+                const bId = getCol(d, 'black_id');
+
+                // 1. Outcomes
+                if (winner === 'white') wWins++;
+                else if (winner === 'black') bWins++;
+                else draws++;
+
+                // 2. Openings
+                const firstMove = moves.split(' ')[0];
+                if (firstMove && (winner === 'white' || winner === 'black')) {
+                    moveMap[winner][firstMove] = (moveMap[winner][firstMove] || 0) + 1;
+                }
+
+                // 3. Rating Logic
+                if (winner !== 'draw') {
+                    decisiveTotal++;
+                    if (wR > bR) {
+                        wAdvTotal++;
+                        if (winner === 'white') { hrWins++; wAdvWins++; }
+                    } else if (bR > wR) {
+                        bAdvTotal++;
+                        if (winner === 'black') { hrWins++; bAdvWins++; }
+                    }
+
+                    // 4. Top Player tracking
+                    const winnerId = (winner === 'white') ? wId : bId;
+                    if (winnerId) {
+                        if (!players[winnerId]) players[winnerId] = { total: 0, asHigher: 0 };
+                        players[winnerId].total++;
+                        const isHigher = (winner === 'white') ? (wR > bR) : (bR > wR);
+                        if (isHigher) players[winnerId].asHigher++;
+                    }
+                }
+            });
+
+            // --- Render Charts (Standard Chart.js logic) ---
+            const total = data.length;
+            document.getElementById('q1-text').innerText = `White: ${((wWins/total)*100).toFixed(1)}% | Black: ${((bWins/total)*100).toFixed(1)}% | Draws: ${draws}`;
+            
             new Chart(document.getElementById('q1Chart'), {
                 type: 'doughnut',
-                data: {
-                    labels: ['White', 'Black', 'Draw'],
-                    datasets: [{
-                        data: [wWins, bWins, draws],
-                        backgroundColor: ['#ffffff', '#616161', '#bb86fc'],
-                        borderWidth: 0
-                    }]
-                }
+                data: { labels: ['White', 'Black', 'Draw'], datasets: [{ data: [wWins, bWins, draws], backgroundColor: ['#ffffff', '#616161', '#bb86fc'] }] }
             });
 
-            // --- 2. OPENING MOVES ---
-            let moveMap = { white: {}, black: {} };
-            data.forEach(d => {
-                const firstMove = (d.moves || "").split(' ')[0];
-                if (!firstMove || !d.winner) return;
-                if (d.winner === 'white' || d.winner === 'black') {
-                    moveMap[d.winner][firstMove] = (moveMap[d.winner][firstMove] || 0) + 1;
-                }
-            });
-
-            const topWhiteMove = Object.entries(moveMap.white).sort((a,b) => b[1]-a[1])[0];
-            const topBlackMove = Object.entries(moveMap.black).sort((a,b) => b[1]-a[1])[0];
-            
-            document.getElementById('q2-text').innerText = 
-                `Favorite Opening: White (${topWhiteMove[0]}), Black (${topBlackMove[0]})`;
-
-            const labels = [...new Set([...Object.keys(moveMap.white), ...Object.keys(moveMap.black)])].slice(0, 8);
+            const topW = Object.entries(moveMap.white).sort((a,b) => b[1]-a[1]).slice(0, 5);
+            const labels = topW.map(m => m[0]);
             new Chart(document.getElementById('q2Chart'), {
                 type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'White Wins', data: labels.map(l => moveMap.white[l] || 0), backgroundColor: '#ffffff' },
-                        { label: 'Black Wins', data: labels.map(l => moveMap.black[l] || 0), backgroundColor: '#616161' }
-                    ]
-                }
+                data: { labels: labels, datasets: [
+                    { label: 'White Wins', data: labels.map(l => moveMap.white[l] || 0), backgroundColor: '#ffffff' },
+                    { label: 'Black Wins', data: labels.map(l => moveMap.black[l] || 0), backgroundColor: '#616161' }
+                ]}
             });
-
-            // --- 3. RATING PERFORMANCE ---
-            let hrWins = 0, decisiveTotal = 0;
-            let wAdvWins = 0, wAdvTotal = 0;
-            let bAdvWins = 0, bAdvTotal = 0;
-
-            data.forEach(d => {
-                if (d.winner === 'draw') return;
-                decisiveTotal++;
-                const wR = Number(d.white_rating), bR = Number(d.black_rating);
-                
-                if (wR > bR) {
-                    wAdvTotal++;
-                    if (d.winner === 'white') { hrWins++; wAdvWins++; }
-                } else if (bR > wR) {
-                    bAdvTotal++;
-                    if (d.winner === 'black') { hrWins++; bAdvWins++; }
-                }
-            });
-
-            document.getElementById('q3-text').innerText = `Higher rated player wins ${((hrWins/decisiveTotal)*100).toFixed(1)}% of the time.`;
 
             new Chart(document.getElementById('q3Chart'), {
                 type: 'bar',
-                data: {
-                    labels: ['Overall', 'White Favor', 'Black Favor'],
-                    datasets: [{
-                        label: 'Win %',
-                        data: [(hrWins/decisiveTotal)*100, (wAdvWins/wAdvTotal)*100, (bAdvWins/bAdvTotal)*100],
-                        backgroundColor: '#03dac6'
-                    }]
-                },
+                data: { labels: ['Overall', 'White Favor', 'Black Favor'], datasets: [{ label: 'Win %', data: [(hrWins/decisiveTotal)*100, (wAdvWins/wAdvTotal)*100, (bAdvWins/bAdvTotal)*100], backgroundColor: '#03dac6' }] },
                 options: { scales: { y: { beginAtZero: true, max: 100 } } }
             });
 
-            // --- 4. TOP PLAYER ---
-            let players = {};
-            data.forEach(d => {
-                const winnerId = d.winner === 'white' ? d.white_id : (d.winner === 'black' ? d.black_id : null);
-                if (!winnerId) return;
-                if (!players[winnerId]) players[winnerId] = { total: 0, asHigher: 0 };
-                players[winnerId].total++;
-                const isHigher = d.winner === 'white' ? (d.white_rating > d.black_rating) : (d.black_rating > d.white_rating);
-                if (isHigher) players[winnerId].asHigher++;
-            });
-
-            const topPlayer = Object.keys(players).reduce((a, b) => players[a].total > players[b].total ? a : b);
-            const p = players[topPlayer];
-            document.getElementById('q4-text').innerText = `User: ${topPlayer} | ${p.total} Total Wins`;
-
+            const topPlayerId = Object.keys(players).reduce((a, b) => players[a].total > players[b].total ? a : b);
+            document.getElementById('q4-text').innerText = `Top User: ${topPlayerId} (${players[topPlayerId].total} wins)`;
             new Chart(document.getElementById('q4Chart'), {
                 type: 'pie',
-                data: {
-                    labels: ['Wins vs Lower Rated', 'Wins vs Higher Rated'],
-                    datasets: [{
-                        data: [p.asHigher, p.total - p.asHigher],
-                        backgroundColor: ['#cf6679', '#03dac6']
-                    }]
-                }
+                data: { labels: ['As Favorite', 'As Underdog'], datasets: [{ data: [players[topPlayerId].asHigher, players[topPlayerId].total - players[topPlayerId].asHigher], backgroundColor: ['#cf6679', '#03dac6'] }] }
             });
         }
     </script>
