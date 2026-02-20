@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chess Insights - GitHub Pages</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <style>
+        :root { --bg: #1a1a1a; --card: #2d2d2d; --text: #e0e0e0; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-top: 20px; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #444; }
+        h1 { text-align: center; color: #fff; }
+        .stats-label { font-size: 0.9rem; color: #aaa; margin-bottom: 15px; text-align: center; }
+        #status { text-align: center; padding: 20px; color: #ffeb3b; }
+        canvas { width: 100% !important; max-height: 300px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Chess Games Data Analysis</h1>
+        <div id="status">Initializing data fetch...</div>
+
+        <div class="dashboard" id="dashboard" style="visibility: hidden;">
+            <div class="card">
+                <h3>1. Game Outcomes</h3>
+                <div id="q1-text" class="stats-label"></div>
+                <canvas id="q1Chart"></canvas>
+            </div>
+
+            <div class="card">
+                <h3>2. Top Opening Moves by Winner</h3>
+                <div id="q2-text" class="stats-label"></div>
+                <canvas id="q2Chart"></canvas>
+            </div>
+
+            <div class="card">
+                <h3>3. Win Probability (Higher Rated)</h3>
+                <div id="q3-text" class="stats-label"></div>
+                <canvas id="q3Chart"></canvas>
+            </div>
+
+            <div class="card">
+                <h3>4. Most Successful User</h3>
+                <div id="q4-text" class="stats-label"></div>
+                <canvas id="q4Chart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Use a relative path so GitHub Pages can find it in the same repo
+        const CSV_FILE = "data/chess_games.csv"; 
+
+        Papa.parse(CSV_FILE, {
+            download: true,
+            header: true,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                if(results.errors.length > 0) {
+                    document.getElementById('status').innerText = "Error loading CSV. Ensure 'chess_games.csv' is in the same folder.";
+                    return;
+                }
+                renderDashboard(results.data);
+            }
+        });
+
+        function renderDashboard(data) {
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('dashboard').style.visibility = 'visible';
+            
+            const total = data.length;
+
+            // --- Q1 Logic ---
+            const counts = { white: 0, black: 0, draw: 0 };
+            data.forEach(d => counts[d.winner]++);
+            
+            document.getElementById('q1-text').innerText = 
+                `Out of ${total} games, ${counts.draw} ended in a draw. White won ${((counts.white/total)*100).toFixed(1)}%.`;
+            
+            new Chart(document.getElementById('q1Chart'), {
+                type: 'pie',
+                data: {
+                    labels: ['White', 'Black', 'Draw'],
+                    datasets: [{
+                        data: [counts.white, counts.black, counts.draw],
+                        backgroundColor: ['#ffffff', '#555555', '#bb86fc']
+                    }]
+                }
+            });
+
+            // --- Q2 Logic ---
+            let wMoves = {}, bMoves = {};
+            data.forEach(d => {
+                const move = (d.moves || "").split(' ')[0];
+                if(!move) return;
+                if(d.winner === 'white') wMoves[move] = (wMoves[move] || 0) + 1;
+                if(d.winner === 'black') bMoves[move] = (bMoves[move] || 0) + 1;
+            });
+
+            const topW = Object.entries(wMoves).sort((a,b) => b[1]-a[1]).slice(0, 5);
+            const topB = Object.entries(bMoves).sort((a,b) => b[1]-a[1]).slice(0, 5);
+            const labels = [...new Set([...topW.map(m=>m[0]), ...topB.map(m=>m[0])])];
+
+            new Chart(document.getElementById('q2Chart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'White Wins', data: labels.map(l => wMoves[l]||0), backgroundColor: '#fff' },
+                        { label: 'Black Wins', data: labels.map(l => bMoves[l]||0), backgroundColor: '#555' }
+                    ]
+                }
+            });
+
+            // --- Q3 Logic ---
+            let higherWins = 0, totalDecisive = 0, wAdvWins = 0, wAdvTotal = 0, bAdvWins = 0, bAdvTotal = 0;
+            data.forEach(d => {
+                if(d.winner === 'draw') return;
+                totalDecisive++;
+                if(d.white_rating > d.black_rating) {
+                    wAdvTotal++;
+                    if(d.winner === 'white') { higherWins++; wAdvWins++; }
+                } else if(d.black_rating > d.white_rating) {
+                    bAdvTotal++;
+                    if(d.winner === 'black') { higherWins++; bAdvWins++; }
+                }
+            });
+
+            new Chart(document.getElementById('q3Chart'), {
+                type: 'bar',
+                data: {
+                    labels: ['Overall', 'White (Higher)', 'Black (Higher)'],
+                    datasets: [{
+                        label: 'Win Rate %',
+                        data: [(higherWins/totalDecisive*100), (wAdvWins/wAdvTotal*100), (bAdvWins/bAdvTotal*100)],
+                        backgroundColor: '#03dac6'
+                    }]
+                },
+                options: { scales: { y: { max: 100, beginAtZero: true } } }
+            });
+
+            // --- Q4 Logic ---
+            let players = {};
+            data.forEach(d => {
+                const winnerId = d.winner === 'white' ? d.white_id : (d.winner === 'black' ? d.black_id : null);
+                if(!winnerId) return;
+                if(!players[winnerId]) players[winnerId] = { wins: 0, hr: 0 };
+                players[winnerId].wins++;
+                const isHR = d.winner === 'white' ? (d.white_rating > d.black_rating) : (d.black_rating > d.white_rating);
+                if(isHR) players[winnerId].hr++;
+            });
+
+            const topPlayer = Object.keys(players).reduce((a, b) => players[a].wins > players[b].wins ? a : b);
+            const pData = players[topPlayer];
+            
+            document.getElementById('q4-text').innerText = `Top User: ${topPlayer} (${pData.wins} wins)`;
+
+            new Chart(document.getElementById('q4Chart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Won as Favorite', 'Won as Underdog'],
+                    datasets: [{
+                        data: [pData.hr, pData.wins - pData.hr],
+                        backgroundColor: ['#cf6679', '#03dac6']
+                    }]
+                }
+            });
+        }
+    </script>
+</body>
+</html>
