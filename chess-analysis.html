@@ -3,222 +3,182 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess Data Analytics</title>
+    <title>Chess Data Analytics Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
     <style>
-        :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-main: #ffffff;
-            --text-dim: #b0b0b0;
-            --accent: #bb86fc;
-        }
-        body {
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 20px;
-        }
+        :root { --bg: #121212; --card: #1e1e1e; --accent: #bb86fc; --text: #e0e0e0; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 20px; }
         .container { max-width: 1200px; margin: 0 auto; }
-        h1 { text-align: center; margin-bottom: 10px; color: var(--accent); }
-        #status {
-            text-align: center;
-            padding: 15px;
-            background: #332940;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            color: #ffeb3b;
-        }
-        .dashboard {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 25px;
-            opacity: 0;
-            transition: opacity 0.5s ease-in;
-        }
-        .card {
-            background: var(--card-bg);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            border: 1px solid #333;
-        }
-        h3 { margin-top: 0; color: var(--text-dim); font-weight: 400; font-size: 1.1rem; }
-        .stats-summary {
-            font-size: 0.9rem;
-            margin-bottom: 15px;
-            color: var(--accent);
-            min-height: 1.2em;
-        }
-        canvas { width: 100% !important; max-height: 300px; }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .full-width { grid-column: 1 / -1; }
+        .card { background: var(--card); padding: 20px; border-radius: 12px; border: 1px solid #333; }
+        h1, h3 { color: var(--accent); margin-top: 0; }
+        .stats { font-size: 0.85rem; color: #aaa; margin-bottom: 15px; }
+        footer { text-align: center; margin-top: 40px; padding: 20px; color: #777; border-top: 1px solid #333; }
+        a { color: var(--accent); text-decoration: none; }
+        #status { text-align: center; color: #ffeb3b; padding: 20px; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Online Chess Games Analysis</h1>
-        <div id="status">Reading chess_games.csv...</div>
+<div class="container">
+    <h1>Chess Games Analytics</h1>
+    <div id="status">Processing dataset...</div>
 
-        <div class="dashboard" id="dashboard">
-            <div class="card">
-                <h3>1. Win Distribution</h3>
-                <div id="q1-text" class="stats-summary"></div>
-                <canvas id="q1Chart"></canvas>
-            </div>
+    <div class="dashboard" id="dashboard" style="display:none;">
+        <div class="card">
+            <h3>1. Win Distribution</h3>
+            <div id="q1-text" class="stats"></div>
+            <canvas id="q1Chart"></canvas>
+        </div>
 
-            <div class="card">
-                <h3>2. Most Frequent Opening Moves</h3>
-                <div id="q2-text" class="stats-summary"></div>
-                <canvas id="q2Chart"></canvas>
-            </div>
+        <div class="card">
+            <h3>2. Top Openings (White Wins)</h3>
+            <div id="q2-text" class="stats"></div>
+            <canvas id="q2Chart"></canvas>
+        </div>
 
-            <div class="card">
-                <h3>3. Win Rate by Rating Advantage</h3>
-                <div id="q3-text" class="stats-summary"></div>
-                <canvas id="q3Chart"></canvas>
-            </div>
+        <div class="card">
+            <h3>3. Higher Rated Advantage</h3>
+            <div id="q3-text" class="stats"></div>
+            <canvas id="q3Chart"></canvas>
+        </div>
 
-            <div class="card">
-                <h3>4. Top Performer Analysis</h3>
-                <div id="q4-text" class="stats-summary"></div>
-                <canvas id="q4Chart"></canvas>
-            </div>
+        <div class="card">
+            <h3>4. Top Performer</h3>
+            <div id="q4-text" class="stats"></div>
+            <canvas id="q4Chart"></canvas>
+        </div>
+
+        <div class="card full-width">
+            <h3>5. Win Rate Trend (Higher Rated Player)</h3>
+            <div class="stats">This trend shows the win percentage of the higher-rated player across the dataset sequence.</div>
+            <canvas id="timeSeriesChart"></canvas>
         </div>
     </div>
 
-    <script>
-        const CSV_URL = "data/chess_games.csv";
+    <footer>
+        Data Source: <a href="https://www.kaggle.com/datasets/mysarahmadbhat/online-chess-games" target="_blank">Online Chess Games Dataset</a>
+    </footer>
+</div>
 
-        Papa.parse(CSV_URL, {
-            download: true,
-            header: true,
-            dynamicTyping: true,
-            skipEmptyLines: true,
-            complete: function(results) {
-                if (results.data && results.data.length > 0) {
-                    // Check if headers actually exist
-                    console.log("Headers detected:", Object.keys(results.data[0]));
-                    processAndRender(results.data);
-                } else {
-                    document.getElementById('status').innerText = "Error: No data found in CSV.";
+<script>
+    const CSV_URL = "chess_games.csv";
+
+    Papa.parse(CSV_URL, {
+        download: true,
+        header: true,
+        dynamicTyping: true,
+        complete: results => processData(results.data)
+    });
+
+    function processData(data) {
+        document.getElementById('status').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'grid';
+
+        const getCol = (obj, name) => {
+            const key = Object.keys(obj).find(k => k.trim().toLowerCase() === name.toLowerCase());
+            return obj[key];
+        };
+
+        let wWins = 0, bWins = 0, draws = 0;
+        let moveMap = {};
+        let hrWins = 0, totalDecisive = 0;
+        let players = {};
+        
+        // Time-series tracking
+        let timelineData = [];
+        let windowSize = 1000; // Group every 1000 games to see a trend line
+        let currentWindowWins = 0;
+        let currentWindowTotal = 0;
+
+        data.forEach((d, index) => {
+            const winner = String(getCol(d, 'winner')).toLowerCase();
+            const moves = String(getCol(d, 'moves') || "");
+            const wR = Number(getCol(d, 'white_rating'));
+            const bR = Number(getCol(d, 'black_rating'));
+            const winnerId = (winner === 'white') ? getCol(d, 'white_id') : getCol(d, 'black_id');
+
+            // 1. Basic Stats
+            if (winner === 'white') wWins++;
+            else if (winner === 'black') bWins++;
+            else draws++;
+
+            // 2. Openings (White Wins)
+            if (winner === 'white') {
+                const firstMove = moves.split(' ')[0];
+                if(firstMove) moveMap[firstMove] = (moveMap[firstMove] || 0) + 1;
+            }
+
+            // 3 & 5. Rating Advantage & Timeline
+            if (winner !== 'draw') {
+                totalDecisive++;
+                const isHRWinner = (wR > bR && winner === 'white') || (bR > wR && winner === 'black');
+                if (isHRWinner) { hrWins++; currentWindowWins++; }
+                currentWindowTotal++;
+
+                // Record point for timeline every 1000 games
+                if (index % windowSize === 0 && index !== 0) {
+                    timelineData.push(((currentWindowWins / currentWindowTotal) * 100).toFixed(1));
+                    currentWindowWins = 0;
+                    currentWindowTotal = 0;
                 }
-            },
-            error: function(err) {
-                document.getElementById('status').innerText = "File Error: Ensure chess_games.csv is in the root folder.";
+            }
+
+            // 4. Player Tracking
+            if (winnerId) {
+                if (!players[winnerId]) players[winnerId] = { total: 0, hr: 0 };
+                players[winnerId].total++;
+                if ((winner === 'white' && wR > bR) || (winner === 'black' && bR > wR)) players[winnerId].hr++;
             }
         });
 
-        function processAndRender(data) {
-            document.getElementById('status').style.display = 'none';
-            document.getElementById('dashboard').style.opacity = '1';
+        // Render Q1-Q4 (Simplified for brevity)
+        new Chart(document.getElementById('q1Chart'), {
+            type: 'doughnut',
+            data: { labels: ['White', 'Black', 'Draw'], datasets: [{ data: [wWins, bWins, draws], backgroundColor: ['#fff', '#666', '#bb86fc'] }] }
+        });
 
-            // Helper to find column name regardless of case/spaces
-            const getCol = (obj, name) => {
-                const key = Object.keys(obj).find(k => k.trim().toLowerCase() === name.toLowerCase());
-                return obj[key];
-            };
+        const topMoves = Object.entries(moveMap).sort((a,b) => b[1]-a[1]).slice(0, 5);
+        new Chart(document.getElementById('q2Chart'), {
+            type: 'bar',
+            data: { labels: topMoves.map(m=>m[0]), datasets: [{ label: 'Wins', data: topMoves.map(m=>m[1]), backgroundColor: '#fff' }] }
+        });
 
-            let wWins = 0, bWins = 0, draws = 0;
-            let moveMap = { white: {}, black: {} };
-            let hrWins = 0, decisiveTotal = 0, wAdvWins = 0, wAdvTotal = 0, bAdvWins = 0, bAdvTotal = 0;
-            let players = {};
+        new Chart(document.getElementById('q3Chart'), {
+            type: 'bar',
+            data: { labels: ['Overall'], datasets: [{ label: 'Higher Rated Win %', data: [(hrWins/totalDecisive)*100], backgroundColor: '#03dac6' }] },
+            options: { scales: { y: { max: 100 } } }
+        });
 
-            data.forEach(d => {
-                // Extract core values using the helper
-                const winner = String(getCol(d, 'winner')).toLowerCase();
-                const moves = String(getCol(d, 'moves') || "");
-                const wR = Number(getCol(d, 'white_rating'));
-                const bR = Number(getCol(d, 'black_rating'));
-                const wId = getCol(d, 'white_id');
-                const bId = getCol(d, 'black_id');
+        const topUser = Object.keys(players).reduce((a, b) => players[a].total > players[b].total ? a : b);
+        new Chart(document.getElementById('q4Chart'), {
+            type: 'pie',
+            data: { labels: ['Favorite', 'Underdog'], datasets: [{ data: [players[topUser].hr, players[topUser].total - players[topUser].hr], backgroundColor: ['#cf6679', '#03dac6'] }] }
+        });
 
-                // 1. Outcomes
-                if (winner === 'white') wWins++;
-                else if (winner === 'black') bWins++;
-                else draws++;
+        // --- 5. TIME-SERIES LINE CHART ---
+        new Chart(document.getElementById('timeSeriesChart'), {
+            type: 'line',
+            data: {
+                labels: timelineData.map((_, i) => `Game ${i * windowSize}`),
+                datasets: [{
+                    label: 'Win Probability %',
+                    data: timelineData,
+                    borderColor: '#bb86fc',
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: 'rgba(187, 134, 252, 0.1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: false, title: { display: true, text: 'Win %' } } }
+            }
+        });
+    }
+</script>
 
-                // 2. Openings
-                const firstMove = moves.split(' ')[0];
-                if (firstMove && (winner === 'white' || winner === 'black')) {
-                    moveMap[winner][firstMove] = (moveMap[winner][firstMove] || 0) + 1;
-                }
-
-                // 3. Rating Logic
-                if (winner !== 'draw') {
-                    decisiveTotal++;
-                    if (wR > bR) {
-                        wAdvTotal++;
-                        if (winner === 'white') { hrWins++; wAdvWins++; }
-                    } else if (bR > wR) {
-                        bAdvTotal++;
-                        if (winner === 'black') { hrWins++; bAdvWins++; }
-                    }
-
-                    // 4. Top Player tracking
-                    const winnerId = (winner === 'white') ? wId : bId;
-                    if (winnerId) {
-                        if (!players[winnerId]) players[winnerId] = { total: 0, asHigher: 0 };
-                        players[winnerId].total++;
-                        const isHigher = (winner === 'white') ? (wR > bR) : (bR > wR);
-                        if (isHigher) players[winnerId].asHigher++;
-                    }
-                }
-            });
-
-            // --- Render Charts (Standard Chart.js logic) ---
-            const total = data.length;
-            document.getElementById('q1-text').innerText = `White: ${((wWins/total)*100).toFixed(1)}% | Black: ${((bWins/total)*100).toFixed(1)}% | Draws: ${draws}`;
-            
-            new Chart(document.getElementById('q1Chart'), {
-                type: 'doughnut',
-                data: { labels: ['White', 'Black', 'Draw'], datasets: [{ data: [wWins, bWins, draws], backgroundColor: ['#ffffff', '#616161', '#bb86fc'] }] }
-            });
-
-            const topW = Object.entries(moveMap.white).sort((a,b) => b[1]-a[1]).slice(0, 5);
-            const labels = topW.map(m => m[0]);
-            new Chart(document.getElementById('q2Chart'), {
-                type: 'bar',
-                data: { labels: labels, datasets: [
-                    { label: 'White Wins', data: labels.map(l => moveMap.white[l] || 0), backgroundColor: '#ffffff' },
-                    { label: 'Black Wins', data: labels.map(l => moveMap.black[l] || 0), backgroundColor: '#616161' }
-                ]}
-            });
-
-            new Chart(document.getElementById('q3Chart'), {
-                type: 'bar',
-                data: { labels: ['Overall', 'White Favor', 'Black Favor'], datasets: [{ label: 'Win %', data: [(hrWins/decisiveTotal)*100, (wAdvWins/wAdvTotal)*100, (bAdvWins/bAdvTotal)*100], backgroundColor: '#03dac6' }] },
-                options: { scales: { y: { beginAtZero: true, max: 100 } } }
-            });
-
-            const topPlayerId = Object.keys(players).reduce((a, b) => players[a].total > players[b].total ? a : b);
-            document.getElementById('q4-text').innerText = `Top User: ${topPlayerId} (${players[topPlayerId].total} wins)`;
-            new Chart(document.getElementById('q4Chart'), {
-                type: 'pie',
-                data: { labels: ['As Favorite', 'As Underdog'], datasets: [{ data: [players[topPlayerId].asHigher, players[topPlayerId].total - players[topPlayerId].asHigher], backgroundColor: ['#cf6679', '#03dac6'] }] }
-            });
-        }
-    </script>
-    <div class="data-source-attribution" style="
-        position: fixed;
-        bottom: 10px;
-        left: 10px;
-        font-size: 0.75rem;
-        color: #666;
-        background: rgba(255, 255, 255, 0.8);
-        padding: 5px 10px;
-        border-radius: 4px;
-        border: 1px solid #ddd;
-        z-index: 1000;
-        font-family: sans-serif;">
-        <i class="fas fa-database" style="margin-right: 5px;"></i>
-        Data Source: 
-        <a href="https://www.kaggle.com/datasets/mysarahmadbhat/online-chess-games" 
-        target="_blank" 
-        style="color: #bb86fc; text-decoration: none; font-weight: bold;">
-        Kaggle Online Chess Games Dataset
-        </a>
-    </div>
 </body>
 </html>
