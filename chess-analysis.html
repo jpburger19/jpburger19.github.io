@@ -169,7 +169,7 @@
 
             // --- Render Charts (Standard Chart.js logic) ---
             const total = data.length;
-            document.getElementById('q1-text').innerText = `White: ${((wWins/total)*100).toFixed(1)}% | Black: ${((bWins/total)*100).toFixed(1)}% | Draws: ${draws}`;
+            document.getElementById('q1-text').innerText = `White: ${((wWins/total)*100).toFixed(1)}% | Black: ${((bWins/total)*100).toFixed(1)}% | Draws: ${((draws/total)*100).toFixed(1)}%`;
             
             new Chart(document.getElementById('q1Chart'), {
                 type: 'doughnut',
@@ -203,7 +203,7 @@
     <div class="data-source-attribution" style="
         position: fixed;
         bottom: 10px;
-        right: 10px;
+        left: 10px;
         font-size: 0.75rem;
         color: #666;
         background: rgba(255, 255, 255, 0.8);
@@ -212,7 +212,6 @@
         border: 1px solid #ddd;
         z-index: 1000;
         font-family: sans-serif;">
-        <i class="fas fa-database" style="margin-right: 5px;"></i>
         Data Source: 
         <a href="https://www.kaggle.com/datasets/mysarahmadbhat/online-chess-games" 
         target="_blank" 
