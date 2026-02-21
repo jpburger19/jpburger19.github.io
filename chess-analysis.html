@@ -194,7 +194,6 @@
                     labels: ['Higher Rated Win %', 'Lower Rated Win %', 'White Favor Win %', 'Black Favor Win %'], 
                     datasets: [{ 
                         label: "Win %", 
-                        hideLabel: true,
                         data: [
                             (hrWins/decisiveTotal)*100, 
                             (lrWins/decisiveTotal)*100, 
@@ -204,7 +203,16 @@
                         backgroundColor: ['#03dac6', '#cf6679', '#ffffff', '#616161'] 
                     }] 
                 },
-                options: { scales: { y: { beginAtZero: true, max: 100 } } }
+                options: { 
+                    plugins: {
+                        legend: {
+                            display: false // This line hides the "Win %" label at the top
+                        }
+                    },
+                    scales: { 
+                        y: { beginAtZero: true, max: 100 } 
+                    } 
+                }
             });
 
             const topPlayerId = Object.keys(players).reduce((a, b) => players[a].total > players[b].total ? a : b);
