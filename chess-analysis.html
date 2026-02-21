@@ -54,6 +54,7 @@
         }
         canvas { width: 100% !important; max-height: 300px; }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
@@ -63,25 +64,25 @@
 
         <div class="dashboard" id="dashboard">
             <div class="card">
-                <h3>1. Win Distribution</h3>
+                <h3>Win Distribution</h3>
                 <div id="q1-text" class="stats-summary"></div>
                 <canvas id="q1Chart"></canvas>
             </div>
 
             <div class="card">
-                <h3>2. Most Frequent Opening Moves</h3>
+                <h3>Most Frequent Opening Moves</h3>
                 <div id="q2-text" class="stats-summary"></div>
                 <canvas id="q2Chart"></canvas>
             </div>
 
             <div class="card">
-                <h3>3. Win Rate by Rating Advantage</h3>
+                <h3>Win Rate by Rating Advantage</h3>
                 <div id="q3-text" class="stats-summary"></div>
                 <canvas id="q3Chart"></canvas>
             </div>
 
             <div class="card">
-                <h3>4. Top Performer Analysis</h3>
+                <h3>Top Performer Analysis</h3>
                 <div id="q4-text" class="stats-summary"></div>
                 <canvas id="q4Chart"></canvas>
             </div>
@@ -186,9 +187,22 @@
                 ]}
             });
 
+            const lrWins = decisiveTotal - hrWins;
             new Chart(document.getElementById('q3Chart'), {
                 type: 'bar',
-                data: { labels: ['Overall', 'White Favor', 'Black Favor'], datasets: [{ label: 'Win %', data: [(hrWins/decisiveTotal)*100, (wAdvWins/wAdvTotal)*100, (bAdvWins/bAdvTotal)*100], backgroundColor: '#03dac6' }] },
+                data: { 
+                    labels: ['Higher Rated Win %', 'Lower Rated Win %', 'White Favor Win %', 'Black Favor Win %'], 
+                    datasets: [{ 
+                        label: 'Win %', 
+                        data: [
+                            (hrWins/decisiveTotal)*100, 
+                            (lrWins/decisiveTotal)*100, 
+                            (wAdvWins/wAdvTotal)*100, 
+                            (bAdvWins/bAdvTotal)*100
+                        ], 
+                        backgroundColor: ['#03dac6', '#cf6679', '#ffffff', '#616161'] 
+                    }] 
+                },
                 options: { scales: { y: { beginAtZero: true, max: 100 } } }
             });
 
@@ -200,6 +214,7 @@
             });
         }
     </script>
+    
     <div class="data-source-attribution" style="
         position: fixed;
         bottom: 10px;
@@ -212,6 +227,7 @@
         border: 1px solid #ddd;
         z-index: 1000;
         font-family: sans-serif;">
+        <i class="fas fa-database" style="margin-right: 5px;"></i>
         Data Source: 
         <a href="https://www.kaggle.com/datasets/mysarahmadbhat/online-chess-games" 
         target="_blank" 
