@@ -60,7 +60,7 @@
 
     <div class="container">
         <h1>Online Chess Games Analysis</h1>
-        <div id="status">Reading chess_games.csv...</div>
+        <div id="status">Loading data...</div>
 
         <div class="dashboard" id="dashboard">
             <div class="card">
@@ -168,7 +168,7 @@
                 }
             });
 
-            // --- Render Charts (Standard Chart.js logic) ---
+            // --- Render Charts ---
             const total = data.length;
             document.getElementById('q1-text').innerText = `White: ${((wWins/total)*100).toFixed(1)}% | Black: ${((bWins/total)*100).toFixed(1)}% | Draws: ${((draws/total)*100).toFixed(1)}%`;
             

@@ -120,18 +120,18 @@
         <div class="project-grid">
             <a href="amtrak-explorer.html" class="card">
                 <h3>🚄 Amtrak Explorer</h3>
-                <p>Geospatial data visualization of Amtrak routes in North America.</p>
+                <p>Interactive geospatial data visualization of Amtrak routes in North America.</p>
                 <div style="margin-top: 10px;">
-                    <span class="tag">HTML</span> <span class="tag">JSON</span> <span class="tag">Leaflet.js</span>
+                    <span class="tag">HTML</span> <span class="tag">JSON</span> <span class="tag">JavaScript</span>
                 </div>
                 <p style="color: var(--green); font-weight: bold; margin-top: 15px;">View Project →</p>
             </a>
 
-            <a href="fintech-revenue-integrity.html" class="card">
-                <h3>💳 Fintech Revenue Integrity</h3>
-                <p>Full-scale reconciliation audit using a Kaggle BigQuery dataset.</p>
+            <a href="revenue-integrity.html" class="card">
+                <h3>💳 Revenue Integrity</h3>
+                <p>Full-scale reconciliation audit using a synthetic dataset.</p>
                 <div style="margin-top: 10px;">
-                    <span class="tag">HTML</span> <span class="tag">SQL</span> <span class="tag">Python</span> <span class="tag">Chart.js</span>
+                    <span class="tag">HTML</span> <span class="tag">SQL</span> <span class="tag">Python</span> <span class="tag">JavaScript</span>
                 </div>
                 <p style="color: var(--green); font-weight: bold; margin-top: 15px;">View Project →</p>
             </a>
@@ -140,7 +140,7 @@
                 <h3>♟ Chess Analysis</h3>
                 <p>Data analysis of chess games and player performance.</p>
                 <div style="margin-top: 10px;">
-                    <span class="tag">HTML</span> <span class="tag">CSV</span> <span class="tag">JavaScript</span> <span class="tag">Chart.js</span>
+                    <span class="tag">HTML</span> <span class="tag">CSV</span> <span class="tag">JavaScript</span>
                 </div>
                 <p style="color: var(--green); font-weight: bold; margin-top: 15px;">View Project →</p>
             </a>
@@ -148,23 +148,6 @@
     </section>
 
 </div>
-
-<script>
-    // Mock data based on the Kaggle Dataset structure
-    const ctx = document.getElementById('gtvChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Merchant A', 'Merchant B', 'Merchant C', 'Merchant D', 'Merchant E'],
-            datasets: [{
-                label: 'Gross Transaction Volume ($)',
-                data: [12500, 19200, 15000, 28000, 22500],
-                backgroundColor: '#3949ab'
-            }]
-        },
-        options: { responsive: true }
-    });
-</script>
 
 </body>
 </html>

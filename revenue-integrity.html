@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Revenue Integrity Audit </title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/papaparse/5.3.0/papaparse.min.js"></script>
+    <style>
+        body { font-family: sans-serif; line-height: 1.6; color: #333; max-width: 1000px; margin: auto; padding: 20px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; box-shadow: 2px 2px 10px #f0f0f0; }
+        .metric { font-size: 2em; font-weight: bold; color: #d9534f; }
+        pre { background: #f4f4f4; padding: 10px; overflow-x: auto; border-left: 5px solid #337ab7; }
+    </style>
+</head>
+<body>
+    <a href="index.html">← Back to Portfolio</a>
+    <h1>Operational Efficiency: Revenue Reconciliation Audit</h1>
+    <p><strong>Scenario:</strong> Identifying "leaked" revenue between CRM sales and Payment Gateway logs.</p>
+
+    <div class="grid">
+        <div class="card">
+            <h3>Total Revenue at Risk</h3>
+            <div id="risk-metric" class="metric">$0.00</div>
+            <p>Discrepancies requiring manual intervention.</p>
+        </div>
+        <div class="card">
+            <h3>Audit Status</h3>
+            <div id="status-chart"></div>
+        </div>
+    </div>
+
+    <h3>The Logic (SQL Implementation)</h3>
+    <p>To identify these inconsistencies, I developed the following reconciliation join:</p>
+    <pre>
+SELECT s.order_id, (s.amount - p.amount) as variance
+FROM sales s
+LEFT JOIN payments p ON s.order_id = p.order_id
+WHERE s.amount != p.amount OR p.order_id IS NULL;
+    </pre>
+
+    <div class="card">
+        <h3>Variance by Region</h3>
+        <div id="region-chart"></div>
+    </div>
+
+    <script>
+        // Function to handle errors visually
+        const displayError = (err) => {
+            console.error(err);
+            document.getElementById('risk-metric').innerText = "Data Error";
+            document.getElementById('risk-metric').style.color = "gray";
+        };
+
+        // Data Loading Logic with specific paths
+        Promise.all([
+            fetch('./data/raw_sales_data.csv').then(res => {
+                if (!res.ok) throw new Error('Sales CSV not found');
+                return res.text();
+            }),
+            fetch('./data/payment_gateway_logs.csv').then(res => {
+                if (!res.ok) throw new Error('Payments CSV not found');
+                return res.text();
+            })
+        ]).then(([salesText, paymentText]) => {
+            const sales = Papa.parse(salesText, {header: true, skipEmptyLines: true}).data;
+            const payments = Papa.parse(paymentText, {header: true, skipEmptyLines: true}).data;
+
+            let totalRisk = 0;
+            let categories = { "Missing": 0, "Mismatch": 0 };
+            let regionData = {};
+
+            sales.forEach(s => {
+                const p = payments.find(pay => pay.order_id === s.order_id);
+                const amt = parseFloat(s.order_amount);
+                const region = s.region || 'Unknown';
+
+                if (!p) {
+                    totalRisk += amt;
+                    categories["Missing"]++;
+                    regionData[region] = (regionData[region] || 0) + amt;
+                } else if (amt !== parseFloat(p.order_amount)) {
+                    const diff = amt - parseFloat(p.order_amount);
+                    totalRisk += diff;
+                    categories["Mismatch"]++;
+                    regionData[region] = (regionData[region] || 0) + diff;
+                }
+            });
+
+            // Update Metric
+            document.getElementById('risk-metric').innerText = `$${totalRisk.toFixed(2)}`;
+
+            // Render Pie Chart
+            Plotly.newPlot('status-chart', [{
+                values: Object.values(categories),
+                labels: Object.keys(categories),
+                type: 'pie',
+                hole: .4,
+                marker: {colors: ['#d9534f', '#5bc0de']}
+            }], {height: 300, margin: {t:20, b:20, l:20, r:20}});
+
+            // Render Region Bar Chart
+            Plotly.newPlot('region-chart', [{
+                x: Object.keys(regionData),
+                y: Object.values(regionData),
+                type: 'bar',
+                marker: {color: '#337ab7'}
+            }], {height: 300});
+
+        }).catch(err => displayError(err));
+    </script>
+</body>
+</html>
