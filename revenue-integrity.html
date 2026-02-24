@@ -23,7 +23,8 @@
     <h1>Operational Efficiency: Revenue Reconciliation Audit</h1>
     <p><strong>Scenario:</strong> Identifying "leaked" revenue between CRM sales and Payment Gateway logs.</p>
 
-    <h3>The Dataset</h3>
+    <h3>The Dataset (Python)</h3>
+    <p>To generate the dataset, I created a function that simulates sales and payment data with intentional discrepancies:</p>
     <pre>
     def generate_data(records=1000):
         # Generate Base Sales Data
@@ -51,19 +52,18 @@
         df_payments = pd.concat([df_payments, df_duplicates])
     </pre>
 
-    <div class="grid">
-        <div class="card">
-            <h3>Total Revenue at Risk</h3>
-            <div id="risk-metric" class="metric">$0.00</div>
-            <p>Discrepancies requiring manual intervention.</p>
-        </div>
-        <div class="card">
-            <h3>Audit Status</h3>
-            <div id="status-chart"></div>
-        </div>
+    <div class="card">
+        <h3>Total Revenue at Risk</h3>
+        <div id="risk-metric" class="metric">$0.00</div>
+        <p>Discrepancies requiring manual intervention.</p>
     </div>
-
-    <h3>The Logic (SQL Implementation)</h3>
+    
+    <div class="card">
+        <h3>Audit Status</h3>
+        <div id="status-chart"></div>
+    </div>
+    
+    <h3>The Logic (SQL)</h3>
     <p>To identify these inconsistencies, I developed the following reconciliation join:</p>
     <pre>
     SELECT s.order_id, (s.amount - p.amount) as variance
@@ -195,12 +195,16 @@
                 type: 'bar',
                 marker: { color: '#337ab7' },
                 hovertemplate: 'Region: %{x}<br>Variance: $%{y:,.2f}<extra></extra>'
-            }], { 
-                height: 350,
-                margin: { t: 50, b: 50, l: 60, r: 20 },
-                xaxis: { title: 'Business Region' },
-                yaxis: { title: 'Financial Variance ($)' }
-            });
+                }], { 
+                    height: 350,
+                    margin: { t: 50, b: 50, l: 60, r: 20 },
+                    xaxis: { title: 'Business Region' },
+                    yaxis: { title: 'Financial Variance ($)' }
+                }, 
+                {
+                    displayModeBar: false, // This removes the zoom, pan, and save buttons
+                    responsive: true
+                });
 
             console.log("Audit complete. Categories identified:", categories);
 
