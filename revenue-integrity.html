@@ -16,9 +16,40 @@
     </style>
 </head>
 <body>
-    <a href="index.html">← Back to Portfolio</a>
+    <div class="nav-back">
+        <a href="index.html" style="text-decoration: none; color: #1a237e; font-weight: bold;">← Back to Portfolio</a>
+    </div>
+    
     <h1>Operational Efficiency: Revenue Reconciliation Audit</h1>
     <p><strong>Scenario:</strong> Identifying "leaked" revenue between CRM sales and Payment Gateway logs.</p>
+
+    <h3>The Dataset</h3>
+    <pre>
+    def generate_data(records=1000):
+        # Generate Base Sales Data
+        sales_data = {
+            'order_id': [f'ORD_{1000 + i}' for i in range(records)],
+            'customer_id': [f'CUST_{random.randint(1, 200)}' for _ in range(records)],
+            'order_date': [datetime(2023, 1, 1) + timedelta(days=random.randint(0, 365)) for _ in range(records)],
+            'order_amount': np.round(np.random.uniform(20.0, 500.0, records), 2),
+            'region': random.choices(['North', 'South', 'East', 'West'], k=records)
+        }
+        df_sales = pd.DataFrame(sales_data)
+
+        # Generate Payment Gateway Data (with intentional errors)
+        df_payments = df_sales.copy()
+                
+        # Introduce "The Leak": Remove 3% of records (Missing Payments)
+        df_payments = df_payments.sample(frac=0.97)
+                
+        # Introduce "The Mismatch": Change amounts for 5% of records
+        mismatch_idx = df_payments.sample(frac=0.05).index
+        df_payments.loc[mismatch_idx, 'order_amount'] = df_payments.loc[mismatch_idx, 'order_amount'] * 0.9
+                
+        # Introduce "The Duplicate": Repeat 2% of records
+        df_duplicates = df_payments.sample(frac=0.02)
+        df_payments = pd.concat([df_payments, df_duplicates])
+    </pre>
 
     <div class="grid">
         <div class="card">
@@ -35,10 +66,10 @@
     <h3>The Logic (SQL Implementation)</h3>
     <p>To identify these inconsistencies, I developed the following reconciliation join:</p>
     <pre>
-SELECT s.order_id, (s.amount - p.amount) as variance
-FROM sales s
-LEFT JOIN payments p ON s.order_id = p.order_id
-WHERE s.amount != p.amount OR p.order_id IS NULL;
+    SELECT s.order_id, (s.amount - p.amount) as variance
+    FROM sales s
+    LEFT JOIN payments p ON s.order_id = p.order_id
+    WHERE s.amount != p.amount OR p.order_id IS NULL;
     </pre>
 
     <div class="card">
@@ -49,80 +80,129 @@ WHERE s.amount != p.amount OR p.order_id IS NULL;
     <script>
         const displayError = (err) => {
             console.error("Audit Script Error:", err);
-            document.getElementById('risk-metric').innerText = "Load Error";
+            const metricEl = document.getElementById('risk-metric');
+            if (metricEl) {
+                metricEl.innerText = "Load Error";
+                metricEl.style.color = "#888";
+            }
         };
 
-        // 1. Data Loading from your /data folder
+        // 1. Data Loading from the /data folder
         Promise.all([
             fetch('./data/raw_sales_data.csv').then(res => {
-                if (!res.ok) throw new Error('Sales file not found');
+                if (!res.ok) throw new Error('Sales CSV not found');
                 return res.text();
             }),
             fetch('./data/payment_gateway_logs.csv').then(res => {
-                if (!res.ok) throw new Error('Payment file not found');
+                if (!res.ok) throw new Error('Payment Logs CSV not found');
                 return res.text();
             })
         ]).then(([salesText, paymentText]) => {
             
-            // 2. Parsing CSVs with Auto-Type Conversion
+            // 2. Parse CSVs (dynamicTyping ensures numbers aren't treated as strings)
             const sales = Papa.parse(salesText, {header: true, skipEmptyLines: true, dynamicTyping: true}).data;
             const payments = Papa.parse(paymentText, {header: true, skipEmptyLines: true, dynamicTyping: true}).data;
 
-            // 3. Reconciliation Logic Variables
-            let totalRisk = 0;
-            let categories = { "Missing Payment": 0, "Amount Mismatch": 0, "Clean": 0 };
+            // 3. Pre-process Payments to identify Duplicates
+            // We count occurrences of each Order ID in the payment gateway
+            const paymentCounts = {};
+            payments.forEach(p => {
+                paymentCounts[p.order_id] = (paymentCounts[p.order_id] || 0) + 1;
+            });
+
+            // 4. Reconciliation Variables
+            let totalRiskValue = 0;
+            let categories = { 
+                "Missing Payment": 0, 
+                "Amount Mismatch": 0, 
+                "Duplicate Transaction": 0, 
+                "Clean": 0 
+            };
             let regionVariance = {};
 
-            // 4. The "Audit Loop" (Mimicking a SQL Left Join)
+            // 5. The Audit Loop (Primary Analytical Logic)
             sales.forEach(s => {
-                // Find corresponding payment record
-                const p = payments.find(pay => pay.order_id === s.order_id);
+                const orderID = s.order_id;
+                const pCount = paymentCounts[orderID] || 0;
                 const region = s.region || 'Uncategorized';
                 
-                if (!p) {
-                    // Scenario: Order exists in CRM but no money in Gateway
-                    totalRisk += s.order_amount;
+                // Find the primary payment record if it exists
+                const p = payments.find(pay => pay.order_id === orderID);
+
+                if (pCount > 1) {
+                    // SCENARIO: Duplicate Transaction (Double Billing)
+                    const allPaymentsForOrder = payments.filter(pay => pay.order_id === orderID);
+                    const totalPaid = allPaymentsForOrder.reduce((sum, curr) => sum + curr.order_amount, 0);
+                    const variance = totalPaid - s.order_amount;
+                    
+                    totalRiskValue += Math.abs(variance);
+                    categories["Duplicate Transaction"]++;
+                    regionVariance[region] = (regionVariance[region] || 0) + Math.abs(variance);
+
+                } else if (pCount === 0) {
+                    // SCENARIO: Missing Payment (Revenue Leakage)
+                    totalRiskValue += s.order_amount;
                     categories["Missing Payment"]++;
                     regionVariance[region] = (regionVariance[region] || 0) + s.order_amount;
+
                 } else if (s.order_amount !== p.order_amount) {
-                    // Scenario: Payment exists but amounts don't match
-                    const diff = Math.abs(s.order_amount - p.order_amount);
-                    totalRisk += diff;
+                    // SCENARIO: Amount Mismatch (Under/Over Billing)
+                    const variance = Math.abs(s.order_amount - p.order_amount);
+                    totalRiskValue += variance;
                     categories["Amount Mismatch"]++;
-                    regionVariance[region] = (regionVariance[region] || 0) + diff;
+                    regionVariance[region] = (regionVariance[region] || 0) + variance;
+
                 } else {
+                    // SCENARIO: Data is consistent
                     categories["Clean"]++;
                 }
             });
 
-            // 5. Update the UI Metrics
-            document.getElementById('risk-metric').innerText = `$${totalRisk.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            // 6. Update UI Metric (Total Risk)
+            const riskMetricEl = document.getElementById('risk-metric');
+            if (riskMetricEl) {
+                riskMetricEl.innerText = `$${totalRiskValue.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            }
 
-            // 6. Generate "Audit Status" Donut Chart
+            // 7. Render Audit Status Donut Chart
             Plotly.newPlot('status-chart', [{
-                values: [categories["Missing Payment"], categories["Amount Mismatch"], categories["Clean"]],
-                labels: ["Missing Payment", "Amount Mismatch", "Clean"],
+                values: [
+                    categories["Missing Payment"], 
+                    categories["Amount Mismatch"], 
+                    categories["Duplicate Transaction"], 
+                    categories["Clean"]
+                ],
+                labels: ["Missing Payment", "Amount Mismatch", "Duplicate Transaction", "Clean"],
                 type: 'pie',
                 hole: .4,
-                marker: { colors: ['#d9534f', '#f0ad4e', '#5cb85c'] }
+                marker: { 
+                    colors: ['#d9534f', '#f0ad4e', '#9b59b6', '#5cb85c'] 
+                },
+                textinfo: 'label+percent',
+                textposition: 'outside',
+                automargin: true
             }], { 
-                height: 300, 
-                margin: { t: 20, b: 20, l: 0, r: 0 },
-                showlegend: true 
+                height: 380, 
+                margin: { t: 40, b: 40, l: 20, r: 20 },
+                showlegend: true,
+                legend: { orientation: 'h', y: -0.2 }
             });
 
-            // 7. Generate "Variance by Region" Bar Chart
+            // 8. Render Variance by Region Bar Chart
             Plotly.newPlot('region-chart', [{
                 x: Object.keys(regionVariance),
                 y: Object.values(regionVariance),
                 type: 'bar',
-                marker: { color: '#337ab7' }
+                marker: { color: '#337ab7' },
+                hovertemplate: 'Region: %{x}<br>Variance: $%{y:,.2f}<extra></extra>'
             }], { 
                 height: 350,
-                title: 'Revenue Leakage by Region ($)',
-                xaxis: { title: 'Region' },
-                yaxis: { title: 'Variance Amount' }
+                margin: { t: 50, b: 50, l: 60, r: 20 },
+                xaxis: { title: 'Business Region' },
+                yaxis: { title: 'Financial Variance ($)' }
             });
+
+            console.log("Audit complete. Categories identified:", categories);
 
         }).catch(err => displayError(err));
     </script>
