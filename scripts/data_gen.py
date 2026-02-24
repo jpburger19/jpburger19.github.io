@@ -31,7 +31,7 @@ def generate_data(records=1000):
     df_duplicates = df_payments.sample(frac=0.02)
     df_payments = pd.concat([df_payments, df_duplicates])
 
-    # Save to CSV for your GitHub Repo
+    # Save to CSV
     df_sales.to_csv('raw_sales_data.csv', index=False)
     df_payments[['order_id', 'order_amount', 'order_date']].to_csv('payment_gateway_logs.csv', index=False)
     print("Success: 'raw_sales_data.csv' and 'payment_gateway_logs.csv' generated.")
