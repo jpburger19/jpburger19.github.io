@@ -19,7 +19,9 @@
             --text-muted: #64748b;
             --border-color: #e2e8f0;
         }
-
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
         body { 
             font-family: 'Inter', sans-serif; 
             line-height: 1.6; 
@@ -72,19 +74,6 @@
         }
         .btn:hover:not(:disabled) { background-color: var(--primary-hover); transform: translateY(-1px); }
         .btn:disabled { background-color: #94a3b8; cursor: not-allowed; }
-
-        /* Code Blocks */
-        pre { 
-            background: #1e1e1e; 
-            color: #d4d4d4; 
-            padding: 20px; 
-            overflow-x: auto; 
-            border-radius: 12px; 
-            font-size: 0.9em;
-            font-family: 'Courier New', Courier, monospace;
-            border: 1px solid #333;
-            margin-bottom: 30px;
-        }
         .section-title { margin-top: 40px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-bottom: 20px;}
     </style>
 </head>
