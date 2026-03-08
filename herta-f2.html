@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colton Herta - 2026 F2 Season</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #18181f;
+    --border: #242430;
+    --accent: #e8ff00;
+    --accent2: #ff4a1c;
+    --text: #f0f0f0;
+    --muted: #666672;
+    --cadillac: #b8963e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND TEXTURE ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 40% at 50% -10%, rgba(232,255,0,0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 60% at 100% 100%, rgba(255,74,28,0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── HEADER BANNER ── */
+  .top-bar {
+    background: var(--cadillac);
+    height: 3px;
+    width: 100%;
+  }
+
+  .hero {
+    padding: 48px 0 32px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero-inner {
+    display: flex;
+    align-items: flex-end;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .driver-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 8vw, 100px);
+    line-height: 0.9;
+    letter-spacing: 2px;
+    color: var(--text);
+  }
+
+  .driver-name span {
+    display: block;
+    color: var(--accent);
+  }
+
+  .driver-meta {
+    padding-bottom: 8px;
+  }
+
+  .driver-meta p {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .driver-meta .team {
+    font-size: 13px;
+    color: var(--cadillac);
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+
+  /* ── STATS HEADER ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 28px 0;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    padding: 28px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 32px;
+    width: 32px; height: 2px;
+    background: var(--accent);
+  }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .stat-card.crashes .stat-value { color: var(--accent2); }
+
+  /* ── RACE SELECTOR ── */
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .flag-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 8px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 900px) { .flag-grid { grid-template-columns: repeat(4, 1fr); } }
+  @media (max-width: 500px) { .flag-grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .flag-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 8px 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .flag-btn:hover {
+    border-color: var(--accent);
+    background: var(--surface2);
+    transform: translateY(-2px);
+  }
+
+  .flag-btn.active {
+    border-color: var(--accent);
+    background: var(--surface2);
+  }
+
+  .flag-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+  }
+
+  .flag-btn.has-data .flag-emoji::after {
+    content: '●';
+    position: absolute;
+    top: 2px; right: 2px;
+    font-size: 6px;
+    color: var(--accent);
+  }
+
+  .flag-emoji {
+    font-size: 26px;
+    position: relative;
+    line-height: 1;
+  }
+
+  .flag-round {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .flag-country {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text);
+    text-align: center;
+    line-height: 1.2;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── RACE PANEL ── */
+  .race-panel {
+    display: none;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .race-panel.active { display: block; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .race-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .race-flag-large { font-size: 40px; }
+
+  .race-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 1px;
+  }
+
+  .race-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+
+  .race-crash-badge {
+    margin-left: auto;
+    background: rgba(255,74,28,0.15);
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    padding: 4px 12px;
+    border-radius: 3px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    display: none;
+  }
+
+  .race-crash-badge.visible { display: block; }
+
+  /* ── DATA SECTIONS ── */
+  .data-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+
+  @media (max-width: 800px) { .data-grid { grid-template-columns: 1fr; } }
+
+  .data-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .data-section-head {
+    padding: 12px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .data-section-head .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .data-table th {
+    padding: 8px 14px;
+    text-align: left;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+
+  .data-table td {
+    padding: 9px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    border-bottom: 1px solid rgba(36,36,48,0.5);
+  }
+
+  .data-table tr:last-child td { border-bottom: none; }
+
+  .data-table td.lap-time { color: var(--accent); font-weight: 500; }
+  .data-table td.pos-p1 { color: #ffd700; }
+  .data-table td.pos-p2 { color: #c0c0c0; }
+  .data-table td.pos-p3 { color: #cd7f32; }
+  .data-table td.dnf { color: var(--accent2); }
+  .data-table td.gap { color: var(--muted); font-size: 11px; }
+
+  .empty-state {
+    padding: 28px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+  }
+
+  .empty-state .icon { font-size: 20px; margin-bottom: 8px; }
+
+  /* ── NO RACE SELECTED ── */
+  .no-selection {
+    text-align: center;
+    padding: 80px 0;
+    color: var(--muted);
+  }
+
+  .no-selection .big { font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: var(--border); margin-bottom: 12px; }
+  .no-selection p { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 2px; }
+
+  /* ── FOOTER ── */
+  footer {
+    margin-top: 80px;
+    padding: 24px 0;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: gap;
+  }
+
+  footer p {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .season-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 14px;
+    color: var(--cadillac);
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+<div class="top-bar"></div>
+
+<div class="container">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-inner">
+      <div class="driver-name">
+        Colton<span>Herta</span>
+      </div>
+      <div class="driver-meta">
+        <p>2026 FIA Formula 2 Championship</p>
+        <p class="team">Hitech TGR — Car No. 4</p>
+        <p style="margin-top:6px; color:#555566;">Cadillac F1 Test Driver</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEASON STATS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Total Laps</div>
+      <div class="stat-value" id="total-laps">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Races</div>
+      <div class="stat-value" id="total-races">0</div>
+    </div>
+    <div class="stat-card crashes">
+      <div class="stat-label">Total Crashes</div>
+      <div class="stat-value" id="total-crashes">0</div>
+    </div>
+  </div>
+
+  <!-- FLAG SELECTOR -->
+  <div class="section-label">Race Calendar</div>
+  <div class="flag-grid" id="flag-grid"></div>
+
+  <!-- RACE DATA PANEL -->
+  <div id="race-display">
+    <div class="no-selection">
+      <div class="big">SELECT A RACE</div>
+      <p>Click a flag above to view race data</p>
+    </div>
+  </div>
+
+</div>
+
+<div class="container">
+  <footer>
+    <p>Data from <a href="https://www.fiaformula2.com/Calendar" target="_blank" rel="noopener noreferrer">FIA Formula 2</a> · Last edit: <span id="last-edit">—</span> · Created by JP Burger</p>
+    <span class="season-badge">F2 2026</span>
+  </footer>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  RACE DATA — EDIT THIS SECTION TO UPDATE DATA
+// ═══════════════════════════════════════════════
+const races = [
+  {
+    round: 1,
+    name: "Australian GP",
+    country: "Australia",
+    flag: "🇦🇺",
+    circuit: "Albert Park Circuit",
+    date: "6-8 Mar 2026",
+    location: "Melbourne, Australia",
+    practice: [{pos: 22, laps: 8, time: "1:33.738", gap: "+4.601s", crashes: 1}],
+    qualifying: [{pos: 14, laps: 13, time: "1:29.765", gap: "+1.070s", crashes: 0}],
+    sprint: [{pos: 16, laps: 23, time: "39:22.927", gap: "+13.201s", bestLap: "1:32.981", crashes: 0}],
+    feature: [{pos: 7, laps: 33, time: "56:22.6597", gap: "+17.411s", bestLap: "1:32.381", crashes: 0}],
+    crashed: true
+  },
+  {
+    round: 2,
+    name: "Bahrain GP",
+    country: "Bahrain",
+    flag: "🇧🇭",
+    circuit: "Bahrain International Circuit",
+    date: "10-12 Apr 2026",
+    location: "Sakhir, Bahrain",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 3,
+    name: "Saudi Arabian GP",
+    country: "Saudi Arabia",
+    flag: "🇸🇦",
+    circuit: "Jeddah Corniche Circuit",
+    date: "17-19 Apr 2026",
+    location: "Jeddah, Saudi Arabia",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 4,
+    name: "Monaco GP",
+    country: "Monaco",
+    flag: "🇲🇨",
+    circuit: "Circuit de Monaco",
+    date: "4-7 Jun 2026",
+    location: "Monte Carlo, Monaco",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 5,
+    name: "Barcelona-Catalunya GP",
+    country: "Spain (Barcelona)",
+    flag: "🇪🇸",
+    circuit: "Circuit de Barcelona-Catalunya",
+    date: "12-14 Jun 2026",
+    location: "Barcelona, Spain",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 6,
+    name: "Austrian GP",
+    country: "Austria",
+    flag: "🇦🇹",
+    circuit: "Red Bull Ring",
+    date: "26-28 Jun 2026",
+    location: "Spielberg, Austria",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 7,
+    name: "British GP",
+    country: "Great Britain",
+    flag: "🇬🇧",
+    circuit: "Silverstone Circuit",
+    date: "3-5 Jul 2026",
+    location: "Silverstone, UK",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 8,
+    name: "Belgian GP",
+    country: "Belgium",
+    flag: "🇧🇪",
+    circuit: "Circuit de Spa-Francorchamps",
+    date: "17-19 Jul 2026",
+    location: "Stavelot, Belgium",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 9,
+    name: "Hungarian GP",
+    country: "Hungary",
+    flag: "🇭🇺",
+    circuit: "Hungaroring",
+    date: "24-26 Jul 2026",
+    location: "Budapest, Hungary",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 10,
+    name: "Italian GP",
+    country: "Italy",
+    flag: "🇮🇹",
+    circuit: "Autodromo Nazionale Monza",
+    date: "4-6 Sep 2026",
+    location: "Monza, Italy",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 11,
+    name: "Spanish GP",
+    country: "Spain (Madrid)",
+    flag: "🇪🇸",
+    circuit: "Circuito de Madring",
+    date: "11-13 Sep 2026",
+    location: "Madrid, Spain",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 12,
+    name: "Azerbaijan GP",
+    country: "Azerbaijan",
+    flag: "🇦🇿",
+    circuit: "Baku City Circuit",
+    date: "24-26 Sep 2026",
+    location: "Baku, Azerbaijan",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 13,
+    name: "Qatar GP",
+    country: "Qatar",
+    flag: "🇶🇦",
+    circuit: "Lusail International Circuit",
+    date: "27-29 Nov 2026",
+    location: "Lusail, Qatar",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  },
+  {
+    round: 14,
+    name: "Abu Dhabi GP",
+    country: "UAE",
+    flag: "🇦🇪",
+    circuit: "Yas Marina Circuit",
+    date: "4-6 Dec 2026",
+    location: "Abu Dhabi, UAE",
+    practice: [],
+    qualifying: [],
+    sprint: [],
+    feature: [],
+    crashed: false
+  }
+];
+
+// ═══════════════════════════════════════
+//  COMPUTED TOTALS — auto-calculated
+// ═══════════════════════════════════════
+function computeTotals() {
+  let totalLaps = 0, totalRaces = 0, totalCrashes = 0;
+  races.forEach(r => {
+    const pracLaps = r.practice.reduce((sum, p) => sum + (p.laps || 0), 0);
+    const qualLaps = r.qualifying.reduce((sum, q) => sum + (q.laps || 0), 0);
+    const sprintLaps = r.sprint.length > 0 ? (r.sprint[0].laps || 0) : 0;
+    const featureLaps = r.feature.length > 0 ? (r.feature[0].laps || 0) : 0;
+    totalLaps += sprintLaps + featureLaps + pracLaps + qualLaps;
+    if (r.sprint.length > 0) totalRaces++;
+    if (r.feature.length > 0) totalRaces++;
+    if (r.crashed) totalCrashes++;
+  });
+  document.getElementById('total-laps').textContent = totalLaps;
+  document.getElementById('total-races').textContent = totalRaces;
+  document.getElementById('total-crashes').textContent = totalCrashes;
+}
+
+// ═══════════════════════════════════════
+//  RENDER FLAG GRID
+// ═══════════════════════════════════════
+function buildFlagGrid() {
+  const grid = document.getElementById('flag-grid');
+  races.forEach((r, i) => {
+    const hasData = r.practice.length > 0 || r.qualifying.length > 0 ||
+                    r.sprint.length > 0 || r.feature.length > 0;
+    const btn = document.createElement('button');
+    btn.className = 'flag-btn' + (hasData ? ' has-data' : '');
+    btn.setAttribute('data-index', i);
+    btn.innerHTML = `
+      <span class="flag-round">R${r.round}</span>
+      <span class="flag-emoji">${r.flag}</span>
+      <span class="flag-country">${r.country}</span>
+    `;
+    btn.addEventListener('click', () => selectRace(i));
+    grid.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════
+//  RENDER RACE PANEL
+// ═══════════════════════════════════════
+let activeIndex = null;
+
+function posClass(pos) {
+  if (pos == 1) return 'pos-p1';
+  if (pos == 2) return 'pos-p2';
+  if (pos == 3) return 'pos-p3';
+  return '';
+}
+
+function renderTable(head, headers, rows, emptyMsg) {
+  let html = `<div class="data-section">
+    <div class="data-section-head"><span class="dot"></span>${head}</div>`;
+  if (rows.length === 0) {
+    html += `<div class="empty-state"><div class="icon">—</div>${emptyMsg}</div>`;
+  } else {
+    html += `<table class="data-table"><thead><tr>`;
+    headers.forEach(h => html += `<th>${h}</th>`);
+    html += `</tr></thead><tbody>`;
+    rows.forEach(row => {
+      html += `<tr>`;
+      row.forEach((cell, ci) => {
+        const cls = cell.cls || '';
+        html += `<td class="${cls}">${cell.val !== undefined ? cell.val : cell}</td>`;
+      });
+      html += `</tr>`;
+    });
+    html += `</tbody></table>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function selectRace(index) {
+  if (activeIndex !== null) {
+    document.querySelector(`.flag-btn[data-index="${activeIndex}"]`).classList.remove('active');
+  }
+  activeIndex = index;
+  document.querySelector(`.flag-btn[data-index="${index}"]`).classList.add('active');
+
+  const r = races[index];
+  const display = document.getElementById('race-display');
+
+  // Practice table
+  const pracRows = r.practice.map(p => [
+    {val: `P${p.pos}`, cls: posClass(p.pos)},
+    {val: p.laps, cls: 'laps'},
+    {val: p.time, cls: 'lap-time'},
+    {val: p.gap || '—', cls: 'gap'},
+    {val: p.crashes, cls: 'crashes'}
+  ]);
+
+  // Qualifying table
+  const qualRows = r.qualifying.map(q => [
+    {val: `P${q.pos}`, cls: posClass(q.pos)},
+    {val: q.laps, cls: 'laps'},
+    {val: q.time, cls: 'lap-time'},
+    {val: q.gap || '—', cls: 'gap'},
+    {val: q.crashes, cls: 'crashes'}
+  ]);
+
+  // Sprint table
+  const sprintRows = r.sprint.map(s => [
+    {val: s.pos === 'DNF' ? 'DNF' : `P${s.pos}`, cls: s.pos === 'DNF' ? 'dnf' : posClass(s.pos)},
+    {val: s.laps || '—', cls: 'laps'},
+    {val: s.time, cls: 'lap-time'},
+    {val: s.gap || '—', cls: 'gap'},
+    {val: s.bestLap ? `${s.bestLap}` : '—', cls: 'gap'},
+    {val: s.crashes, cls: 'crashes'}
+  ]);
+
+  // Feature table
+  const featRows = r.feature.map(f => [
+    {val: f.pos === 'DNF' ? 'DNF' : `P${f.pos}`, cls: f.pos === 'DNF' ? 'dnf' : posClass(f.pos)},
+    {val: f.laps || '—', cls: 'laps'},
+    {val: f.time, cls: 'lap-time'},
+    {val: f.gap || '—', cls: 'gap'},
+    {val: f.bestLap ? `${f.bestLap}` : '—', cls: 'gap'},
+    {val: f.crashes, cls: 'crashes'}
+  ]);
+
+  display.innerHTML = `
+    <div class="race-panel active">
+      <div class="race-header">
+        <span class="race-flag-large">${r.flag}</span>
+        <div>
+          <div class="race-title">${r.name}</div>
+          <div class="race-date">${r.circuit} · ${r.date}</div>
+        </div>
+        <div class="race-crash-badge ${r.crashed ? 'visible' : ''}">⚠ CRASH</div>
+      </div>
+
+      <div class="data-grid" style="grid-template-columns: 1fr 1fr;">
+        ${renderTable('Free Practice', ['Pos', 'Laps', 'Time', 'Gap', 'Crashes'], pracRows, 'No practice data yet')}
+        ${renderTable('Qualifying', ['Pos', 'Laps', 'Time', 'Gap', 'Crashes'], qualRows, 'No qualifying data yet')}
+        ${renderTable('Sprint Race', ['Pos', 'Laps', 'Time', 'Gap', 'Best Lap', 'Crashes'], sprintRows, 'No sprint data yet')}    
+        ${renderTable('Feature Race', ['Pos', 'Laps', 'Time', 'Gap', 'Best Lap', 'Crashes'], featRows, 'No feature race data yet')}
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+buildFlagGrid();
+computeTotals();
+
+// Set last edit date
+document.getElementById('last-edit').textContent = new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+
+// Auto-select first race if it has data
+const firstWithData = races.findIndex(r =>
+  r.practice.length || r.qualifying.length || r.sprint.length || r.feature.length
+);
+if (firstWithData >= 0) selectRace(firstWithData);
+
+</script>
+</body>
+</html>
