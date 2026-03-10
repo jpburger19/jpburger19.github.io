@@ -253,29 +253,6 @@
     letter-spacing: 1px;
   }
 
-  .race-date {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 2px;
-    margin-top: 2px;
-  }
-
-  .race-crash-badge {
-    margin-left: auto;
-    background: rgba(255,74,28,0.15);
-    border: 1px solid var(--accent2);
-    color: var(--accent2);
-    padding: 4px 12px;
-    border-radius: 3px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 1px;
-    display: none;
-  }
-
-  .race-crash-badge.visible { display: block; }
-
   /* ── DATA SECTIONS ── */
   .data-grid {
     display: grid;
@@ -392,6 +369,189 @@
     font-size: 14px;
     color: var(--cadillac);
     letter-spacing: 2px;
+  }
+
+  /* ── CIRCUIT MAP BUTTON ── */
+  .map-btn {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+  }
+
+  .map-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(232,255,0,0.04);
+  }
+
+  .map-btn svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+
+  /* ── CRASH BADGE — push right after map btn ── */
+  .race-header-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .race-crash-badge {
+    background: rgba(255,74,28,0.15);
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    padding: 4px 12px;
+    border-radius: 3px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    display: none;
+  }
+
+  .race-crash-badge.visible { display: block; }
+
+  /* ── CIRCUIT MAP MODAL ── */
+  .map-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.82);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: overlayIn 0.2s ease;
+    backdrop-filter: blur(4px);
+  }
+
+  @keyframes overlayIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .map-modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 780px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    animation: modalIn 0.25s ease;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  }
+
+  @keyframes modalIn {
+    from { opacity: 0; transform: scale(0.96) translateY(12px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .map-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    flex-shrink: 0;
+  }
+
+  .map-modal-header .flag { font-size: 22px; }
+
+  .map-modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 1px;
+    line-height: 1;
+  }
+
+  .map-modal-subtitle {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    margin-top: 3px;
+  }
+
+  .map-modal-close {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  .map-modal-close:hover {
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  .map-modal-body {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+  }
+
+  .map-modal-body iframe {
+    width: 100%;
+    height: 480px;
+    border: none;
+    display: block;
+  }
+
+  .map-modal-footer {
+    padding: 10px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+
+  /* ── RACE LOCATION LINE ── */
+  .race-location {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    margin-top: 1px;
+    opacity: 0.85;
+  }
+
+  .race-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 2px;
   }
 </style>
 </head>
@@ -784,9 +944,19 @@ function selectRace(index) {
         <span class="race-flag-large">${r.flag}</span>
         <div>
           <div class="race-title">${r.name}</div>
-          <div class="race-date">${r.circuit} · ${r.date}</div>
+          <div class="race-date">${r.circuit} · ${r.location || ''} · ${r.date}</div>
         </div>
-        <div class="race-crash-badge ${r.crashed ? 'visible' : ''}">⚠ CRASH</div>
+        <div class="race-header-right">
+          <button class="map-btn" onclick="openMapModal(${index})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3V7z"/>
+              <line x1="9" y1="4" x2="9" y2="17"/>
+              <line x1="15" y1="7" x2="15" y2="20"/>
+            </svg>
+            Circuit Map
+          </button>
+          <div class="race-crash-badge ${r.crashed ? 'visible' : ''}">⚠ CRASH</div>
+        </div>
       </div>
 
       <div class="data-grid" style="grid-template-columns: 1fr 1fr;">
@@ -797,6 +967,78 @@ function selectRace(index) {
       </div>
     </div>
   `;
+}
+
+// ═══════════════════════════════════════
+//  CIRCUIT MAP DATA
+// ═══════════════════════════════════════
+const circuitMaps = {
+  "Australian GP":        { lat: -37.8497, lon: 144.9680, zoom: 15 },
+  "Bahrain GP":           { lat: 26.0325,  lon: 50.5106,  zoom: 15 },
+  "Saudi Arabian GP":     { lat: 21.6319,  lon: 39.1044,  zoom: 15 },
+  "Monaco GP":            { lat: 43.7347,  lon: 7.4206,   zoom: 15 },
+  "Barcelona-Catalunya GP":{ lat: 41.5700, lon: 2.2611,   zoom: 15 },
+  "Austrian GP":          { lat: 47.2197,  lon: 14.7647,  zoom: 15 },
+  "British GP":           { lat: 52.0786,  lon: -1.0169,  zoom: 15 },
+  "Belgian GP":           { lat: 50.4372,  lon: 5.9714,   zoom: 15 },
+  "Hungarian GP":         { lat: 47.5830,  lon: 19.2526,  zoom: 15 },
+  "Italian GP":           { lat: 45.6156,  lon: 9.2811,   zoom: 15 },
+  "Spanish GP":           { lat: 40.4503,  lon: -3.6312,  zoom: 15 },
+  "Azerbaijan GP":        { lat: 40.3725,  lon: 49.8533,  zoom: 15 },
+  "Qatar GP":             { lat: 25.4900,  lon: 51.4542,  zoom: 15 },
+  "Abu Dhabi GP":         { lat: 24.4672,  lon: 54.6031,  zoom: 15 }
+};
+
+function openMapModal(index) {
+  const r = races[index];
+  const coords = circuitMaps[r.name] || { lat: 0, lon: 0, zoom: 14 };
+  const bbox = getBbox(coords.lat, coords.lon, coords.zoom);
+  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.lat},${coords.lon}`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'map-modal-overlay';
+  overlay.id = 'map-modal-overlay';
+  overlay.innerHTML = `
+    <div class="map-modal">
+      <div class="map-modal-header">
+        <span class="flag">${r.flag}</span>
+        <div>
+          <div class="map-modal-title">${r.name}</div>
+          <div class="map-modal-subtitle">${r.circuit} · ${r.location || ''}</div>
+        </div>
+        <button class="map-modal-close" onclick="closeMapModal()">✕</button>
+      </div>
+      <div class="map-modal-body">
+        <iframe src="${mapUrl}" loading="lazy" title="Circuit map for ${r.circuit}"></iframe>
+      </div>
+      <div class="map-modal-footer">Map data © OpenStreetMap contributors</div>
+    </div>
+  `;
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) closeMapModal();
+  });
+  document.body.appendChild(overlay);
+  document.body.style.overflow = 'hidden';
+}
+
+function closeMapModal() {
+  const overlay = document.getElementById('map-modal-overlay');
+  if (overlay) overlay.remove();
+  document.body.style.overflow = '';
+}
+
+// Escape key closes modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeMapModal();
+});
+
+function getBbox(lat, lon, zoom) {
+  const delta = 0.012 / Math.pow(2, zoom - 15);
+  const west  = (lon - delta * 2).toFixed(6);
+  const south = (lat - delta).toFixed(6);
+  const east  = (lon + delta * 2).toFixed(6);
+  const north = (lat + delta).toFixed(6);
+  return `${west},${south},${east},${north}`;
 }
 
 // ═══════════════════════════════════════
