@@ -397,6 +397,36 @@
     background: rgba(232,255,0,0.04);
   }
 
+  .layout-btn {
+    border-color: rgba(184,150,62,0.5);
+    color: var(--cadillac);
+  }
+
+  .layout-btn:hover {
+    border-color: var(--cadillac);
+    color: var(--cadillac);
+    background: rgba(184,150,62,0.06);
+  }
+
+  /* ── CIRCUIT LAYOUT IMAGE ── */
+  .circuit-layout-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 2px;
+  }
+
+  .circuit-layout-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+  }
+
   .map-btn svg {
     width: 13px;
     height: 13px;
@@ -450,7 +480,7 @@
     border-radius: 8px;
     overflow: hidden;
     width: 100%;
-    max-width: 780px;
+    max-width: 900px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
@@ -516,13 +546,24 @@
     flex: 1;
     min-height: 0;
     position: relative;
+    overflow: hidden;
   }
 
-  .map-modal-body iframe {
+  .circuit-svg-wrap {
     width: 100%;
-    height: 480px;
-    border: none;
-    display: block;
+    height: 460px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d0d14;
+    padding: 24px;
+    box-sizing: border-box;
+  }
+
+  .circuit-svg-wrap svg {
+    max-width: 100%;
+    max-height: 100%;
+    filter: drop-shadow(0 0 18px rgba(232,255,0,0.08));
   }
 
   .map-modal-footer {
@@ -534,6 +575,9 @@
     color: var(--muted);
     letter-spacing: 1px;
     flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
   /* ── RACE LOCATION LINE ── */
@@ -947,15 +991,22 @@ function selectRace(index) {
           <div class="race-date">${r.circuit} · ${r.location || ''} · ${r.date}</div>
         </div>
         <div class="race-header-right">
-          <button class="map-btn" onclick="openMapModal(${index})">
+          <div class="race-crash-badge ${r.crashed ? 'visible' : ''}">⚠ CRASH</div>
+          <button class="map-btn" onclick="openLocationModal(${index})">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
               <path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3V7z"/>
               <line x1="9" y1="4" x2="9" y2="17"/>
               <line x1="15" y1="7" x2="15" y2="20"/>
             </svg>
-            Circuit Map
+            Map
           </button>
-          <div class="race-crash-badge ${r.crashed ? 'visible' : ''}">⚠ CRASH</div>
+          <button class="map-btn layout-btn" onclick="openLayoutModal(${index})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <ellipse cx="12" cy="12" rx="10" ry="5" transform="rotate(-20 12 12)"/>
+              <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+            </svg>
+            Track
+          </button>
         </div>
       </div>
 
@@ -970,31 +1021,232 @@ function selectRace(index) {
 }
 
 // ═══════════════════════════════════════
-//  CIRCUIT MAP DATA
+//  CIRCUIT SVG LAYOUTS
 // ═══════════════════════════════════════
-const circuitMaps = {
-  "Australian GP":        { lat: -37.8497, lon: 144.9680, zoom: 15 },
-  "Bahrain GP":           { lat: 26.0325,  lon: 50.5106,  zoom: 15 },
-  "Saudi Arabian GP":     { lat: 21.6319,  lon: 39.1044,  zoom: 15 },
-  "Monaco GP":            { lat: 43.7347,  lon: 7.4206,   zoom: 15 },
-  "Barcelona-Catalunya GP":{ lat: 41.5700, lon: 2.2611,   zoom: 15 },
-  "Austrian GP":          { lat: 47.2197,  lon: 14.7647,  zoom: 15 },
-  "British GP":           { lat: 52.0786,  lon: -1.0169,  zoom: 15 },
-  "Belgian GP":           { lat: 50.4372,  lon: 5.9714,   zoom: 15 },
-  "Hungarian GP":         { lat: 47.5830,  lon: 19.2526,  zoom: 15 },
-  "Italian GP":           { lat: 45.6156,  lon: 9.2811,   zoom: 15 },
-  "Spanish GP":           { lat: 40.4503,  lon: -3.6312,  zoom: 15 },
-  "Azerbaijan GP":        { lat: 40.3725,  lon: 49.8533,  zoom: 15 },
-  "Qatar GP":             { lat: 25.4900,  lon: 51.4542,  zoom: 15 },
-  "Abu Dhabi GP":         { lat: 24.4672,  lon: 54.6031,  zoom: 15 }
+// Each circuit: path data (d), turn labels [{n, x, y}], laps, length
+const circuitSVGs = {
+
+  "Australian GP": {
+    laps: 33, length: "5.303 km",
+    viewBox: "0 0 500 400",
+    path: "M 250 50 C 310 50 370 80 390 130 C 410 180 400 220 370 250 C 340 280 300 290 280 310 C 260 330 255 355 240 365 C 225 375 200 370 185 355 C 170 340 165 310 150 290 C 135 270 110 265 100 245 C 85 220 90 190 105 165 C 120 140 145 125 165 110 C 185 95 220 50 250 50 Z",
+    turns: [
+      {n:1,x:310,y:60},{n:3,x:390,y:120},{n:6,x:400,y:215},
+      {n:9,x:350,y:265},{n:11,x:265,y:330},{n:13,x:215,y:370},
+      {n:15,x:155,y:340},{n:16,x:110,y:275},{n:14,x:88,y:215},
+      {n:12,x:100,y:155},{n:2,x:175,y:95}
+    ]
+  },
+
+  "Bahrain GP": {
+    laps: 27, length: "5.412 km",
+    viewBox: "0 0 500 420",
+    path: "M 100 80 L 340 80 C 370 80 390 100 390 130 L 390 160 C 390 185 370 200 350 200 L 280 200 C 260 200 245 215 245 235 L 245 270 C 245 290 260 305 280 305 L 340 305 C 365 305 380 320 380 345 L 380 370 C 380 395 360 410 335 410 L 160 410 C 135 410 115 395 115 370 L 115 340 C 115 315 130 300 155 300 L 190 300 C 210 300 220 285 220 265 L 220 230 C 220 205 205 190 180 190 L 130 190 C 105 190 85 170 85 145 L 85 115 C 85 95 91 80 100 80 Z",
+    turns: [
+      {n:1,x:175,y:68},{n:2,x:355,y:68},{n:4,x:400,y:145},
+      {n:5,x:345,y:210},{n:6,x:248,y:255},{n:7,x:290,y:314},
+      {n:8,x:390,y:358},{n:10,x:310,y:418},{n:11,x:175,y:418},
+      {n:13,x:100,y:358},{n:14,x:100,y:250},{n:15,x:165,y:198},
+      {n:3,x:400,y:95}
+    ]
+  },
+
+  "Saudi Arabian GP": {
+    laps: 27, length: "6.174 km",
+    viewBox: "0 0 460 500",
+    path: "M 230 30 C 280 30 330 55 355 95 C 380 135 375 175 360 205 C 345 235 315 248 310 270 C 305 292 320 310 330 335 C 340 360 335 390 315 410 C 295 430 265 438 240 438 C 215 438 190 425 175 405 C 160 385 158 358 165 335 C 172 312 190 300 188 278 C 186 256 165 245 150 220 C 135 195 130 160 145 125 C 160 90 195 68 230 30 Z",
+    turns: [
+      {n:1,x:230,y:18},{n:2,x:365,y:75},{n:4,x:382,y:175},
+      {n:6,x:340,y:248},{n:7,x:340,y:340},{n:9,x:318,y:415},
+      {n:13,x:230,y:448},{n:15,x:148,y:415},{n:16,x:148,y:340},
+      {n:18,x:170,y:248},{n:20,x:128,y:155},{n:22,x:148,y:75},
+      {n:3,x:383,y:125}
+    ]
+  },
+
+  "Monaco GP": {
+    laps: 42, length: "3.337 km",
+    viewBox: "0 0 480 400",
+    path: "M 60 120 C 60 90 80 70 110 70 L 200 70 C 225 70 240 55 240 35 C 240 18 258 10 275 18 C 292 26 295 45 285 60 C 275 75 260 80 255 95 C 250 110 265 125 285 130 L 370 130 C 400 130 420 150 420 175 L 420 195 C 420 220 400 240 375 240 L 320 240 C 295 240 280 255 280 275 L 280 310 C 280 335 260 355 235 360 L 180 368 C 155 373 130 360 118 338 C 106 316 112 290 130 275 C 148 260 168 260 178 245 C 188 230 180 210 165 200 C 150 190 130 192 115 180 C 95 165 60 150 60 120 Z",
+    turns: [
+      {n:1,x:105,y:58},{n:3,x:235,y:22},{n:5,x:298,y:55},
+      {n:6,x:295,y:118},{n:8,x:390,y:118},{n:10,x:428,y:185},
+      {n:11,x:368,y:248},{n:12,x:278,y:295},{n:13,x:238,y:358},
+      {n:15,x:118,y:325},{n:16,x:108,y:248},{n:7,x:185,y:195}
+    ]
+  },
+
+  "Barcelona-Catalunya GP": {
+    laps: 66, length: "4.657 km",
+    viewBox: "0 0 520 400",
+    path: "M 80 200 L 80 150 C 80 120 100 100 130 100 L 380 100 C 415 100 435 120 440 150 L 445 185 C 448 210 435 230 415 238 L 355 250 C 335 256 325 270 330 290 C 335 310 355 318 360 338 C 365 358 350 378 328 385 L 220 390 C 195 393 172 380 165 358 C 158 336 168 314 185 300 C 202 286 222 284 230 268 C 238 252 228 234 210 224 L 148 210 C 110 202 80 228 80 200 Z",
+    turns: [
+      {n:1,x:215,y:88},{n:2,x:398,y:88},{n:3,x:452,y:155},
+      {n:4,x:420,y:242},{n:5,x:345,y:260},{n:7,x:340,y:345},
+      {n:9,x:292,y:395},{n:10,x:188,y:390},{n:11,x:155,y:342},
+      {n:12,x:175,y:280},{n:13,x:148,y:215},{n:14,x:68,y:195},
+      {n:6,x:355,y:295}
+    ]
+  },
+
+  "Austrian GP": {
+    laps: 40, length: "4.318 km",
+    viewBox: "0 0 440 400",
+    path: "M 90 320 L 90 200 C 90 175 105 158 128 152 L 185 140 C 205 135 215 120 212 100 C 209 80 225 62 248 60 L 295 58 C 322 57 342 75 342 100 L 342 148 C 342 168 355 182 375 185 L 400 188 C 422 191 435 208 432 230 L 425 265 C 421 285 405 298 384 298 L 315 298 C 292 298 278 312 278 335 L 278 360 C 278 382 260 398 238 395 L 128 388 C 105 385 90 350 90 320 Z",
+    turns: [
+      {n:1,x:188,y:370},{n:2,x:78,y:285},{n:3,x:78,y:190},
+      {n:4,x:148,y:138},{n:5,x:200,y:128},{n:6,x:210,y:72},
+      {n:7,x:270,y:46},{n:8,x:352,y:90},{n:9,x:352,y:158},
+      {n:10,x:410,y:180},{n:11,x:442,y:240},{n:3,x:410,y:290}
+    ]
+  },
+
+  "British GP": {
+    laps: 52, length: "5.891 km",
+    viewBox: "0 0 540 420",
+    path: "M 270 40 C 335 40 395 68 420 115 C 445 162 435 215 415 248 C 395 281 362 292 358 318 C 354 344 375 362 378 388 C 381 408 362 422 340 418 L 240 415 C 218 411 205 395 210 372 C 215 349 235 340 238 318 C 241 296 222 280 200 268 C 178 256 155 248 138 228 C 118 205 112 172 120 142 C 128 112 152 88 180 70 C 208 52 240 40 270 40 Z",
+    turns: [
+      {n:1,x:270,y:28},{n:3,x:432,y:90},{n:5,x:445,y:200},
+      {n:6,x:418,y:260},{n:7,x:368,y:298},{n:9,x:368,y:380},
+      {n:10,x:310,y:420},{n:11,x:215,y:420},{n:13,x:192,y:360},
+      {n:15,x:118,y:290},{n:16,x:105,y:195},{n:18,x:148,y:112},
+      {n:2,x:380,y:48}
+    ]
+  },
+
+  "Belgian GP": {
+    laps: 44, length: "7.004 km",
+    viewBox: "0 0 560 440",
+    path: "M 280 40 C 340 38 400 60 430 105 C 460 150 458 205 445 248 C 432 291 405 318 408 348 C 411 378 440 395 445 420 L 350 428 C 325 430 305 415 298 392 C 291 369 302 345 295 322 C 288 299 265 290 248 272 C 231 254 222 228 225 202 L 228 178 C 231 155 218 138 198 132 L 155 122 C 128 115 110 92 115 65 C 120 38 148 25 175 28 L 250 35 C 262 36 272 38 280 40 Z",
+    turns: [
+      {n:1,x:220,y:28},{n:2,x:350,y:28},{n:3,x:445,y:85},
+      {n:5,x:458,y:200},{n:6,x:430,y:268},{n:7,x:415,y:345},
+      {n:8,x:448,y:425},{n:9,x:348,y:435},{n:10,x:272,y:398},
+      {n:12,x:218,y:320},{n:13,x:208,y:255},{n:14,x:215,y:175},
+      {n:15,x:155,y:128},{n:4,x:462,y:145}
+    ]
+  },
+
+  "Hungarian GP": {
+    laps: 70, length: "4.381 km",
+    viewBox: "0 0 480 400",
+    path: "M 240 35 C 305 35 365 65 390 115 C 415 165 405 220 385 258 C 365 296 330 310 320 335 C 310 360 325 385 310 400 L 210 400 C 195 385 205 360 195 335 C 185 310 155 298 132 270 C 109 242 98 202 105 162 C 112 122 138 88 170 65 C 202 42 240 35 240 35 Z",
+    turns: [
+      {n:1,x:195,y:22},{n:2,x:330,y:22},{n:3,x:400,y:95},
+      {n:4,x:400,y:200},{n:5,x:358,y:265},{n:6,x:318,y:310},
+      {n:8,x:318,y:390},{n:9,x:215,y:398},{n:10,x:162,y:345},
+      {n:11,x:128,y:275},{n:12,x:95,y:195},{n:13,x:110,y:108},
+      {n:14,x:172,y:58}
+    ]
+  },
+
+  "Italian GP": {
+    laps: 53, length: "5.793 km",
+    viewBox: "0 0 520 420",
+    path: "M 100 210 L 100 130 C 100 100 120 80 150 80 L 265 80 C 285 80 295 65 290 45 C 285 28 300 15 318 20 C 336 25 342 45 332 60 C 322 75 305 80 305 100 L 305 115 C 305 135 322 148 342 148 L 420 148 C 448 148 465 168 462 195 L 458 230 C 455 255 435 272 410 272 L 350 272 C 328 272 315 285 315 308 L 315 340 C 315 365 298 382 272 385 L 215 390 C 188 393 165 378 158 355 L 148 322 C 140 295 150 270 172 258 C 194 246 218 250 232 235 C 246 220 242 198 225 185 C 208 172 185 172 168 158 C 148 142 100 238 100 210 Z",
+    turns: [
+      {n:1,x:192,y:68},{n:2,x:295,y:32},{n:3,x:342,y:65},
+      {n:4,x:315,y:135},{n:5,x:408,y:135},{n:6,x:472,y:200},
+      {n:7,x:415,y:280},{n:8,x:318,y:295},{n:9,x:318,y:355},
+      {n:10,x:248,y:392},{n:11,x:152,y:378},{n:12,x:135,y:308},
+      {n:13,x:165,y:255},{n:14,x:88,y:215}
+    ]
+  },
+
+  "Spanish GP": {
+    laps: 58, length: "5.058 km",
+    viewBox: "0 0 500 420",
+    path: "M 250 38 C 310 38 370 62 398 108 C 426 154 420 208 402 248 C 384 288 350 302 348 330 C 346 358 370 372 372 398 L 275 410 C 252 412 232 400 228 378 C 224 356 238 338 235 315 C 232 292 212 280 190 265 C 168 250 148 228 142 200 C 136 172 145 140 162 115 C 179 90 205 68 235 52 C 240 48 245 44 250 38 Z",
+    turns: [
+      {n:1,x:250,y:26},{n:2,x:368,y:55},{n:3,x:408,y:115},
+      {n:4,x:408,y:215},{n:5,x:368,y:278},{n:6,x:348,y:345},
+      {n:7,x:372,y:408},{n:8,x:258,y:418},{n:9,x:185,y:375},
+      {n:10,x:185,y:305},{n:11,x:145,y:240},{n:12,x:128,y:162},
+      {n:13,x:165,y:95},{n:14,x:220,y:52}
+    ]
+  },
+
+  "Azerbaijan GP": {
+    laps: 28, length: "6.003 km",
+    viewBox: "0 0 480 500",
+    path: "M 240 30 L 380 30 C 408 30 425 48 425 75 L 425 120 C 425 145 408 162 382 162 L 308 162 C 285 162 270 178 270 202 L 270 248 C 270 272 285 288 308 288 L 382 288 C 408 288 425 305 425 330 L 425 420 C 425 448 405 465 378 465 L 148 465 C 120 465 98 448 95 420 L 88 340 C 85 312 102 295 128 295 L 170 295 C 192 295 208 278 208 255 L 208 208 C 208 185 192 168 170 168 L 128 168 C 102 168 85 150 88 122 L 95 58 C 98 38 118 25 145 28 L 240 30 Z",
+    turns: [
+      {n:1,x:158,y:18},{n:2,x:348,y:18},{n:3,x:435,y:75},
+      {n:4,x:435,y:145},{n:5,x:362,y:170},{n:6,x:272,y:205},
+      {n:7,x:272,y:270},{n:8,x:362,y:298},{n:9,x:435,y:345},
+      {n:10,x:435,y:430},{n:11,x:348,y:472},{n:12,x:158,y:472},
+      {n:13,x:78,y:428},{n:14,x:78,y:338},{n:15,x:158,y:302},
+      {n:16,x:198,y:258},{n:17,x:198,y:195},{n:18,x:118,y:162},
+      {n:19,x:78,y:118},{n:20,x:118,y:38}
+    ]
+  },
+
+  "Qatar GP": {
+    laps: 22, length: "5.380 km",
+    viewBox: "0 0 500 420",
+    path: "M 250 35 C 315 35 380 65 408 118 C 436 171 428 232 408 275 C 388 318 352 332 345 360 C 338 388 358 405 345 420 L 198 420 C 182 405 198 388 192 360 C 186 332 152 318 128 275 C 104 232 96 168 125 115 C 154 62 218 35 250 35 Z",
+    turns: [
+      {n:1,x:195,y:22},{n:2,x:332,y:22},{n:3,x:418,y:95},
+      {n:4,x:420,y:205},{n:5,x:392,y:270},{n:6,x:348,y:320},
+      {n:7,x:348,y:408},{n:8,x:250,y:428},{n:9,x:148,y:408},
+      {n:10,x:148,y:318},{n:11,x:105,y:268},{n:12,x:95,y:195},
+      {n:13,x:108,y:108},{n:14,x:178,y:52}
+    ]
+  },
+
+  "Abu Dhabi GP": {
+    laps: 58, length: "5.281 km",
+    viewBox: "0 0 520 440",
+    path: "M 260 35 L 390 35 C 418 35 438 55 438 82 L 438 125 C 438 152 418 170 390 170 L 315 170 C 290 170 275 185 275 210 L 275 255 C 275 280 292 295 318 295 L 390 295 C 418 295 438 315 438 342 L 438 385 C 438 412 418 430 390 430 L 148 430 C 118 430 95 412 92 382 L 85 315 C 82 285 100 265 130 262 L 175 258 C 198 255 212 240 212 218 L 212 195 C 212 172 198 158 175 155 L 130 148 C 100 142 82 118 88 88 L 95 55 C 100 35 120 22 148 22 L 260 35 Z",
+    turns: [
+      {n:1,x:175,y:22},{n:2,x:348,y:22},{n:3,x:448,y:78},
+      {n:4,x:448,y:145},{n:5,x:375,y:178},{n:6,x:275,y:218},
+      {n:7,x:275,y:270},{n:8,x:375,y:302},{n:9,x:448,y:360},
+      {n:10,x:448,y:405},{n:11,x:348,y:438},{n:12,x:175,y:438},
+      {n:13,x:78,y:408},{n:14,x:72,y:355},{n:15,x:105,y:295},
+      {n:16,x:168,y:260},{n:17,x:185,y:218},{n:18,x:105,y:175},
+      {n:19,x:72,y:108},{n:20,x:130,y:38}
+    ]
+  }
 };
 
-function openMapModal(index) {
-  const r = races[index];
-  const coords = circuitMaps[r.name] || { lat: 0, lon: 0, zoom: 14 };
-  const bbox = getBbox(coords.lat, coords.lon, coords.zoom);
-  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.lat},${coords.lon}`;
+// Circuit layout image URLs keyed by race name
+const circuitLayoutImages = {
+  "Australian GP":          "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/AU",
+  "Bahrain GP":             "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/BH",
+  "Saudi Arabian GP":       "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/SA",
+  "Monaco GP":              "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/MC",
+  "Barcelona-Catalunya GP": "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/ES",
+  "Austrian GP":            "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/AT",
+  "British GP":             "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/GB",
+  "Belgian GP":             "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/BE",
+  "Hungarian GP":           "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/HU",
+  "Italian GP":             "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/IT",
+  "Spanish GP":             "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/MD",
+  "Azerbaijan GP":          "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/AZ",
+  "Qatar GP":               "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/QA",
+  "Abu Dhabi GP":           "https://res.cloudinary.com/prod-f2f3/ar_16:9,c_fill,dpr_1.0,f_auto,g_auto,h_506,w_900/v1/f2/global/circuits/details/AE"
+};
 
+// OSM location coordinates
+const circuitCoords = {
+  "Australian GP":          { lat: -37.8497, lon: 144.9680 },
+  "Bahrain GP":             { lat: 26.0325,  lon: 50.5106  },
+  "Saudi Arabian GP":       { lat: 21.6319,  lon: 39.1044  },
+  "Monaco GP":              { lat: 43.7347,  lon: 7.4206   },
+  "Barcelona-Catalunya GP": { lat: 41.5700,  lon: 2.2611   },
+  "Austrian GP":            { lat: 47.2197,  lon: 14.7647  },
+  "British GP":             { lat: 52.0786,  lon: -1.0169  },
+  "Belgian GP":             { lat: 50.4372,  lon: 5.9714   },
+  "Hungarian GP":           { lat: 47.5830,  lon: 19.2526  },
+  "Italian GP":             { lat: 45.6156,  lon: 9.2811   },
+  "Spanish GP":             { lat: 40.4503,  lon: -3.6312  },
+  "Azerbaijan GP":          { lat: 40.3725,  lon: 49.8533  },
+  "Qatar GP":               { lat: 25.4900,  lon: 51.4542  },
+  "Abu Dhabi GP":           { lat: 24.4672,  lon: 54.6031  }
+};
+
+function _buildModalShell(r, bodyHTML, footerHTML) {
   const overlay = document.createElement('div');
   overlay.className = 'map-modal-overlay';
   overlay.id = 'map-modal-overlay';
@@ -1008,17 +1260,39 @@ function openMapModal(index) {
         </div>
         <button class="map-modal-close" onclick="closeMapModal()">✕</button>
       </div>
-      <div class="map-modal-body">
-        <iframe src="${mapUrl}" loading="lazy" title="Circuit map for ${r.circuit}"></iframe>
-      </div>
-      <div class="map-modal-footer">Map data © OpenStreetMap contributors</div>
+      <div class="map-modal-body">${bodyHTML}</div>
+      <div class="map-modal-footer">${footerHTML}</div>
     </div>
   `;
-  overlay.addEventListener('click', function(e) {
-    if (e.target === overlay) closeMapModal();
-  });
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeMapModal(); });
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
+}
+
+function openLocationModal(index) {
+  const r = races[index];
+  const coords = circuitCoords[r.name] || { lat: 0, lon: 0 };
+  const delta = 0.012;
+  const bbox = `${(coords.lon - delta*2).toFixed(6)},${(coords.lat - delta).toFixed(6)},${(coords.lon + delta*2).toFixed(6)},${(coords.lat + delta).toFixed(6)}`;
+  const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.lat},${coords.lon}`;
+  const bodyHTML = `<iframe src="${mapUrl}" loading="lazy" title="Location of ${r.circuit}" style="width:100%;height:460px;border:none;display:block;"></iframe>`;
+  const footerHTML = `<span></span>`;
+  _buildModalShell(r, bodyHTML, footerHTML);
+}
+
+function openLayoutModal(index) {
+  const r = races[index];
+  const imgUrl = circuitLayoutImages[r.name];
+  const circuit = circuitSVGs[r.name];
+  const lapInfo = circuit ? `${circuit.laps} laps · ${circuit.length}` : '';
+  const bodyHTML = imgUrl
+    ? `<div style="background:#0a0a10;line-height:0;">
+        <img src="${imgUrl}" alt="Circuit layout for ${r.name}" class="circuit-layout-img"
+          onerror="this.parentNode.innerHTML='<div class=circuit-layout-loading>Image unavailable</div>'"/>
+       </div>`
+    : `<div class="circuit-layout-loading">No layout image available</div>`;
+  const footerHTML = `<span>Official F2 circuit layout</span>`;
+  _buildModalShell(r, bodyHTML, footerHTML);
 }
 
 function closeMapModal() {
@@ -1027,19 +1301,7 @@ function closeMapModal() {
   document.body.style.overflow = '';
 }
 
-// Escape key closes modal
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeMapModal();
-});
-
-function getBbox(lat, lon, zoom) {
-  const delta = 0.012 / Math.pow(2, zoom - 15);
-  const west  = (lon - delta * 2).toFixed(6);
-  const south = (lat - delta).toFixed(6);
-  const east  = (lon + delta * 2).toFixed(6);
-  const north = (lat + delta).toFixed(6);
-  return `${west},${south},${east},${north}`;
-}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMapModal(); });
 
 // ═══════════════════════════════════════
 //  INIT
