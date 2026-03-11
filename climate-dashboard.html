@@ -8,23 +8,23 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #f5f0e8;
-  --surface: #faf7f2;
-  --surface2: #ede8de;
-  --border: #d8cfc0;
-  --border2: #c4b99e;
-  --ink: #1a1510;
-  --ink2: #4a3f30;
-  --ink3: #8a7a68;
-  --amber: #c4821a;
+  --bg: #1a1a1a;
+  --surface: #222222;
+  --surface2: #2a2a2a;
+  --border: #383838;
+  --border2: #484848;
+  --ink: #e8e0d4;
+  --ink2: #c8bfb0;
+  --ink3: #7a6e60;
+  --amber: #d4921e;
   --amber-light: #e8a73a;
-  --amber-pale: rgba(196,130,26,0.12);
+  --amber-pale: rgba(212,146,30,0.14);
   --red: #c44a1a;
-  --teal: #1a7a6e;
-  --violet: #5a2a8c;
-  --blue: #1a4a8c;
-  --shadow: 0 2px 16px rgba(26,21,16,0.08);
-  --shadow-lg: 0 8px 40px rgba(26,21,16,0.14);
+  --teal: #1a8a7e;
+  --violet: #6a3a9c;
+  --blue: #2a5aac;
+  --shadow: 0 2px 16px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 40px rgba(0,0,0,0.5);
   --radius: 16px;
   --radius-sm: 8px;
 }
@@ -34,7 +34,7 @@ body {
   color: var(--ink);
   font-family: 'DM Mono', monospace;
   min-height: 100vh;
-  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23c4b99e' fill-opacity='0.18'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23484848' fill-opacity='0.25'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
 }
 
 /* ── HEADER ── */
@@ -286,7 +286,7 @@ footer strong{color:var(--amber);font-weight:500;}
 <header>
   <div class="logo-wrap">
     <div>
-      <div class="logo-main">Atmos<em>phere</em></div>
+      <div class="logo-main"><em>Atmos</em>phere</div>
       <div class="logo-sub">Global Weather Analytics</div>
     </div>
   </div>
@@ -425,13 +425,12 @@ const DEFAULT_CITIES = [
   { name:'São Paulo', lat:-23.5505, lon:-46.6333 },
 ];
 
-// Load from LocalStorage and safeguard against empty arrays
-let savedCities = JSON.parse(localStorage.getItem('atmos_cities'));
-let cities = (savedCities && savedCities.length > 0) ? savedCities : [...DEFAULT_CITIES];
+// Always start with the default city list on every page load
+let cities = [...DEFAULT_CITIES];
 let currentCity = cities[0];
 
 const PALETTE = ['#c4821a','#c44a1a','#1a7a6e','#1a4a8c','#5a2a8c','#7a5200','#c44a6e','#3a7a1a','#1a6e7a'];
-const GRID = 'rgba(216,207,192,0.6)';
+const GRID = 'rgba(72,72,72,0.7)';
 
 // ── UTILS ──────────────────────────────────────────────────────
 const toF   = c => c * 9/5 + 32;
@@ -528,7 +527,6 @@ function selectCity(city) {
 
 function removeCity(name) {
   cities = cities.filter(c => c.name !== name);
-  localStorage.setItem('atmos_cities', JSON.stringify(cities));
   
   if (cities.length === 0) {
     cities = [...DEFAULT_CITIES];
@@ -545,14 +543,13 @@ async function addCustomCity(name, lat, lon) {
   closeModal();
   if (!cities.find(c => c.name === name)) {
     cities.push({ name, lat, lon });
-    localStorage.setItem('atmos_cities', JSON.stringify(cities));
   }
   selectCity({ name, lat, lon });
 }
 
 // ── CHART DEFAULTS ─────────────────────────────────────────────
-Chart.defaults.color = '#8a7a68';
-Chart.defaults.borderColor = '#d8cfc0';
+Chart.defaults.color = '#7a6e60';
+Chart.defaults.borderColor = '#383838';
 Chart.defaults.font.family = "'DM Mono', monospace";
 Chart.defaults.font.size = 10;
 
@@ -622,8 +619,10 @@ function drawTempChart(data) {
   const fullLabels = rawTimes.map(t => {
     const d = new Date(t);
     const day = d.toLocaleDateString('en', { weekday: 'short' });
-    const hour = d.getHours().toString().padStart(2, '0') + ':00';
-    return `${day}, ${hour}`;
+    const h = d.getHours();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour12 = h % 12 === 0 ? 12 : h % 12;
+    return `${day}, ${hour12}${ampm}`;
   });
 
   const ctx = document.getElementById('tempChart').getContext('2d');
@@ -656,12 +655,12 @@ function drawTempChart(data) {
       plugins: {
         legend: { display: false },
         tooltip: {
-          backgroundColor: '#faf7f2',
-          borderColor: '#d8cfc0',
+          backgroundColor: '#2a2a2a',
+          borderColor: '#484848',
           borderWidth: 1,
-          titleColor: '#c4821a',
+          titleColor: '#d4921e',
           titleFont: { weight: 'bold' },
-          bodyColor: '#4a3f30',
+          bodyColor: '#c8bfb0',
           padding: 12,
           displayColors: false,
           callbacks: {
@@ -717,8 +716,8 @@ function drawWindChart(data) {
       plugins: {
         legend: { display:false },
         tooltip: {
-          backgroundColor:'#faf7f2', borderColor:'#d8cfc0', borderWidth:1,
-          titleColor:'#c44a1a', bodyColor:'#4a3f30',
+          backgroundColor:'#2a2a2a', borderColor:'#484848', borderWidth:1,
+          titleColor:'#c44a1a', bodyColor:'#c8bfb0',
           callbacks: { label: item => ` ${item.raw.toFixed(1)} ${unitW()}` }
         }
       },
@@ -757,8 +756,8 @@ function drawPrecipChart(data) {
       plugins: {
         legend: { display:false },
         tooltip: {
-          backgroundColor:'#faf7f2', borderColor:'#d8cfc0', borderWidth:1,
-          titleColor:'#1a7a6e', bodyColor:'#4a3f30',
+          backgroundColor:'#2a2a2a', borderColor:'#484848', borderWidth:1,
+          titleColor:'#1a7a6e', bodyColor:'#c8bfb0',
           callbacks: { label: item => ` ${item.raw.toFixed(2)} ${unitP()}` }
         }
       },
@@ -799,8 +798,8 @@ function drawHumidChart(data) {
       plugins: {
         legend: { display:true, labels:{color:'#8a7a68', boxWidth:10, font:{size:9}} },
         tooltip: {
-          backgroundColor:'#faf7f2', borderColor:'#d8cfc0', borderWidth:1,
-          titleColor:'#5a2a8c', bodyColor:'#4a3f30'
+          backgroundColor:'#2a2a2a', borderColor:'#484848', borderWidth:1,
+          titleColor:'#5a2a8c', bodyColor:'#c8bfb0'
         }
       },
       scales: {
@@ -842,8 +841,8 @@ async function drawCityChart() {
       plugins: {
         legend: { display:false },
         tooltip: {
-          backgroundColor:'#faf7f2', borderColor:'#d8cfc0', borderWidth:1,
-          titleColor:'#1a1510', bodyColor:'#4a3f30',
+          backgroundColor:'#2a2a2a', borderColor:'#484848', borderWidth:1,
+          titleColor:'#e8e0d4', bodyColor:'#c8bfb0',
           callbacks: { label: item => ` ${item.raw?.toFixed(1) ?? '—'}${unitT()}` }
         }
       },
