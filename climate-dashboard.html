@@ -57,7 +57,30 @@ header {
 }
 .header-controls { display:flex; align-items:center; gap:20px; flex-wrap:wrap; }
 
-/* Live badge */
+/* Toggles */
+.toggle-group { display: flex; align-items: center; gap: 16px; border-left: 1px solid var(--border); padding-left: 20px; }
+.unit-toggle { display:flex; align-items:center; gap:8px; font-size:10px; color:var(--ink3); letter-spacing:0.5px; }
+.toggle-track {
+  width:40px; height:20px; background:var(--surface2);
+  border:1.5px solid var(--border2); border-radius:10px;
+  position:relative; cursor:pointer;
+  transition: background 0.3s, border-color 0.3s;
+}
+.toggle-track.on { background:var(--amber); border-color:var(--amber); }
+.toggle-thumb {
+  position:absolute; top:1px; left:1px; width:14px; height:14px;
+  background:white; border-radius:50%;
+  transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 1px 3px rgba(0,0,0,0.15);
+}
+.toggle-track.on .toggle-thumb { transform:translateX(20px); }
+.unit-label {
+  font-family:'Syne',sans-serif; font-size:11px; font-weight:700;
+  color:var(--ink3); min-width:18px; transition:color 0.2s; cursor:pointer;
+}
+.unit-label.active { color:var(--amber); }
+
+/* Live badge & Clock */
 .live-badge {
   display:flex; align-items:center; gap:7px;
   font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--ink3);
@@ -71,35 +94,11 @@ header {
   0%,100% { box-shadow:0 0 0 3px rgba(45,184,122,0.25); }
   50%      { box-shadow:0 0 0 6px rgba(45,184,122,0.08); }
 }
-
-/* Clock */
 #clock {
   font-size:12px; font-weight:500; color:var(--ink2); letter-spacing:1px;
   background:var(--surface2); padding:6px 12px;
   border-radius:var(--radius-sm); border:1px solid var(--border);
 }
-
-/* °C / °F TOGGLE */
-.unit-toggle { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--ink3); letter-spacing:1px; }
-.toggle-track {
-  width:52px; height:26px; background:var(--surface2);
-  border:1.5px solid var(--border2); border-radius:13px;
-  position:relative; cursor:pointer;
-  transition: background 0.3s, border-color 0.3s;
-}
-.toggle-track.on { background:var(--amber); border-color:var(--amber); }
-.toggle-thumb {
-  position:absolute; top:2px; left:2px; width:20px; height:20px;
-  background:white; border-radius:50%;
-  transition: transform 0.3s cubic-bezier(.4,0,.2,1);
-  box-shadow:0 1px 4px rgba(0,0,0,0.2);
-}
-.toggle-track.on .toggle-thumb { transform:translateX(26px); }
-.unit-label {
-  font-family:'Syne',sans-serif; font-size:13px; font-weight:700;
-  color:var(--ink2); min-width:18px; transition:color 0.2s; cursor:pointer;
-}
-.unit-label.active { color:var(--amber); }
 
 /* ── CITY BAR ── */
 .city-bar {
@@ -112,15 +111,28 @@ header {
   text-transform:uppercase; white-space:nowrap; margin-right:4px;
 }
 .city-pill {
-  padding:5px 15px; border-radius:100px; border:1.5px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  padding:5px 12px; border-radius:100px; border:1.5px solid var(--border);
   background:transparent; color:var(--ink3);
   font-family:'DM Mono',monospace; font-size:10px;
-  letter-spacing:1.5px; text-transform:uppercase;
+  letter-spacing:1px; text-transform:uppercase;
   cursor:pointer; transition:all 0.18s; white-space:nowrap;
+  position: relative;
 }
 .city-pill:hover { border-color:var(--amber); color:var(--amber); background:var(--amber-pale); }
 .city-pill.active { background:var(--amber); border-color:var(--amber); color:white; font-weight:500; }
-.city-pill.add-btn { border-style:dashed; margin-left:6px; }
+.city-pill.add-btn { border-style:dashed; margin-left:6px; padding: 5px 15px; }
+
+.city-pill .remove-city {
+  display: flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: rgba(0,0,0,0.08); color: inherit;
+  font-size: 8px; font-weight: 700; border: none;
+  cursor: pointer; opacity: 0.6; transition: all 0.2s;
+  padding-bottom: 1px;
+}
+.city-pill.active .remove-city { background: rgba(255,255,255,0.2); }
+.city-pill .remove-city:hover { background: var(--red) !important; color: white !important; opacity: 1; }
 
 /* ── METRICS STRIP ── */
 .metrics-strip {
@@ -151,17 +163,11 @@ header {
 .m-sub{font-size:10px;color:var(--ink3);margin-top:8px;font-weight:300;}
 
 /* ── CHART GRID ── */
-.chart-grid-top {
-  display:grid; grid-template-columns:3fr 2fr;
-  border-bottom:1px solid var(--border);
-}
+.chart-grid-top { display:grid; grid-template-columns:3fr 2fr; border-bottom:1px solid var(--border); }
 .chart-grid-bot { display:grid; grid-template-columns:1fr 1fr 1fr; }
 @media(max-width:900px){.chart-grid-top,.chart-grid-bot{grid-template-columns:1fr!important;}}
 
-.chart-panel {
-  background:var(--surface); padding:28px 32px;
-  border-right:1px solid var(--border); position:relative;
-}
+.chart-panel { background:var(--surface); padding:28px 32px; border-right:1px solid var(--border); position:relative; }
 .chart-panel:last-child{border-right:none;}
 .cp-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:12px;}
 .cp-title{font-family:'DM Serif Display',serif;font-size:17px;color:var(--ink);line-height:1.2;}
@@ -258,7 +264,6 @@ footer strong{color:var(--amber);font-weight:500;}
 </head>
 <body>
 
-<!-- MODAL -->
 <div class="modal-overlay" id="searchModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
@@ -278,7 +283,6 @@ footer strong{color:var(--amber);font-weight:500;}
   </div>
 </div>
 
-<!-- HEADER -->
 <header>
   <div class="logo-wrap">
     <div>
@@ -287,33 +291,38 @@ footer strong{color:var(--amber);font-weight:500;}
     </div>
   </div>
   <div class="header-controls">
-    <div class="unit-toggle">
-      <span class="unit-label active" id="labelC" onclick="if(useFahrenheit)toggleUnit()">°C</span>
-      <div class="toggle-track" id="unitToggle" onclick="toggleUnit()">
-        <div class="toggle-thumb"></div>
+    <div class="toggle-group">
+      <div class="unit-toggle">
+        <span class="unit-label active" id="label-temp-c" onclick="toggleUnit('temp', false)">°C</span>
+        <div class="toggle-track" id="toggle-temp" onclick="toggleUnit('temp')"><div class="toggle-thumb"></div></div>
+        <span class="unit-label" id="label-temp-f" onclick="toggleUnit('temp', true)">°F</span>
       </div>
-      <span class="unit-label" id="labelF" onclick="if(!useFahrenheit)toggleUnit()">°F</span>
+      <div class="unit-toggle">
+        <span class="unit-label active" id="label-wind-km" onclick="toggleUnit('wind', false)">km/h</span>
+        <div class="toggle-track" id="toggle-wind" onclick="toggleUnit('wind')"><div class="toggle-thumb"></div></div>
+        <span class="unit-label" id="label-wind-mi" onclick="toggleUnit('wind', true)">mph</span>
+      </div>
+      <div class="unit-toggle">
+        <span class="unit-label active" id="label-precip-mm" onclick="toggleUnit('precip', false)">mm</span>
+        <div class="toggle-track" id="toggle-precip" onclick="toggleUnit('precip')"><div class="toggle-thumb"></div></div>
+        <span class="unit-label" id="label-precip-in" onclick="toggleUnit('precip', true)">in</span>
+      </div>
+      <div class="unit-toggle">
+        <span class="unit-label active" id="label-dist-km" onclick="toggleUnit('dist', false)">km</span>
+        <div class="toggle-track" id="toggle-dist" onclick="toggleUnit('dist')"><div class="toggle-thumb"></div></div>
+        <span class="unit-label" id="label-dist-mi" onclick="toggleUnit('dist', true)">mi</span>
+      </div>
     </div>
     <div id="clock">--:--:-- UTC</div>
     <div class="live-badge"><div class="live-dot"></div><span>Live</span></div>
   </div>
 </header>
 
-<!-- CITY BAR -->
-<div class="city-bar">
+<div class="city-bar" id="cityBar">
   <span class="bar-label">Location:</span>
-  <button class="city-pill active" data-lat="40.7128" data-lon="-74.0060" data-name="New York" onclick="selectCity(this)">New York</button>
-  <button class="city-pill" data-lat="51.5074" data-lon="-0.1278" data-name="London" onclick="selectCity(this)">London</button>
-  <button class="city-pill" data-lat="35.6762" data-lon="139.6503" data-name="Tokyo" onclick="selectCity(this)">Tokyo</button>
-  <button class="city-pill" data-lat="-33.8688" data-lon="151.2093" data-name="Sydney" onclick="selectCity(this)">Sydney</button>
-  <button class="city-pill" data-lat="1.3521" data-lon="103.8198" data-name="Singapore" onclick="selectCity(this)">Singapore</button>
-  <button class="city-pill" data-lat="48.8566" data-lon="2.3522" data-name="Paris" onclick="selectCity(this)">Paris</button>
-  <button class="city-pill" data-lat="19.0760" data-lon="72.8777" data-name="Mumbai" onclick="selectCity(this)">Mumbai</button>
-  <button class="city-pill" data-lat="-23.5505" data-lon="-46.6333" data-name="São Paulo" onclick="selectCity(this)">São Paulo</button>
   <button class="city-pill add-btn" onclick="openModal()">+ Add City</button>
 </div>
 
-<!-- METRICS STRIP -->
 <div class="metrics-strip">
   <div class="metric-tile">
     <div class="m-label">Temperature</div>
@@ -322,7 +331,7 @@ footer strong{color:var(--amber);font-weight:500;}
   </div>
   <div class="metric-tile">
     <div class="m-label">Wind Speed</div>
-    <div class="m-val" id="m-wind">—<span class="m-unit">km/h</span></div>
+    <div class="m-val" id="m-wind">—<span class="m-unit" id="u-wind">km/h</span></div>
     <div class="m-sub" id="m-winddir">Direction —</div>
   </div>
   <div class="metric-tile">
@@ -332,7 +341,7 @@ footer strong{color:var(--amber);font-weight:500;}
   </div>
   <div class="metric-tile">
     <div class="m-label">Precipitation</div>
-    <div class="m-val" id="m-precip">—<span class="m-unit">mm</span></div>
+    <div class="m-val" id="m-precip">—<span class="m-unit" id="u-precip">mm</span></div>
     <div class="m-sub" id="m-precip24">24h total —</div>
   </div>
   <div class="metric-tile">
@@ -347,7 +356,6 @@ footer strong{color:var(--amber);font-weight:500;}
   </div>
 </div>
 
-<!-- CHARTS TOP -->
 <div class="chart-grid-top">
   <div class="chart-panel">
     <div class="loader" id="l1"><div class="loader-ring"></div><div class="loader-txt">Fetching data…</div></div>
@@ -360,20 +368,19 @@ footer strong{color:var(--amber);font-weight:500;}
   <div class="chart-panel" style="border-right:none">
     <div class="loader" id="l2"><div class="loader-ring"></div><div class="loader-txt">Fetching data…</div></div>
     <div class="cp-header">
-      <div><div class="cp-title">Wind <em>Speed</em></div><div class="cp-sub">48-hour forecast · km/h</div></div>
+      <div><div class="cp-title">Wind <em>Speed</em></div><div class="cp-sub" id="sub-wind-unit">48-hour forecast · km/h</div></div>
       <span class="cp-badge">48 hrs</span>
     </div>
     <canvas id="windChart" height="200"></canvas>
   </div>
 </div>
 
-<!-- CHARTS BOTTOM -->
 <div class="chart-grid-bot">
   <div class="chart-panel">
     <div class="loader" id="l3"><div class="loader-ring"></div><div class="loader-txt">Fetching data…</div></div>
     <div class="cp-header">
-      <div><div class="cp-title">7-Day <em>Precipitation</em></div><div class="cp-sub">daily totals · forecast</div></div>
-      <span class="cp-badge">mm/day</span>
+      <div><div class="cp-title">7-Day <em>Precipitation</em></div><div class="cp-sub" id="sub-precip-unit">daily totals · forecast</div></div>
+      <span class="cp-badge">Total</span>
     </div>
     <canvas id="precipChart" height="190"></canvas>
   </div>
@@ -401,13 +408,13 @@ footer strong{color:var(--amber);font-weight:500;}
 </footer>
 
 <script>
-// ── STATE ──────────────────────────────────────────────────────
+// ── STATE & PERSISTENCE ─────────────────────────────────────────
 let charts = {};
-let useFahrenheit = false;
-let currentCity = { lat: 40.7128, lon: -74.0060, name: 'New York' };
 let lastData = null;
 
-const BASE_CITIES = [
+let units = { temp: false, wind: false, precip: false, dist: false };
+
+const DEFAULT_CITIES = [
   { name:'New York',  lat:40.7128,  lon:-74.0060 },
   { name:'London',    lat:51.5074,  lon:-0.1278  },
   { name:'Tokyo',     lat:35.6762,  lon:139.6503 },
@@ -418,15 +425,29 @@ const BASE_CITIES = [
   { name:'São Paulo', lat:-23.5505, lon:-46.6333 },
 ];
 
-let customCity = null; // holds any user-added city
+// Load from LocalStorage and safeguard against empty arrays
+let savedCities = JSON.parse(localStorage.getItem('atmos_cities'));
+let cities = (savedCities && savedCities.length > 0) ? savedCities : [...DEFAULT_CITIES];
+let currentCity = cities[0];
 
 const PALETTE = ['#c4821a','#c44a1a','#1a7a6e','#1a4a8c','#5a2a8c','#7a5200','#c44a6e','#3a7a1a','#1a6e7a'];
 const GRID = 'rgba(216,207,192,0.6)';
 
 // ── UTILS ──────────────────────────────────────────────────────
-const toF  = c => c * 9/5 + 32;
-const fmtT = c => useFahrenheit ? toF(c).toFixed(1) : c.toFixed(1);
-const unit = () => useFahrenheit ? '°F' : '°C';
+const toF   = c => c * 9/5 + 32;
+const toMph = k => k * 0.621371;
+const toIn  = m => m * 0.0393701;
+const toMi  = k => k * 0.621371;
+
+const unitT = () => units.temp ? '°F' : '°C';
+const unitW = () => units.wind ? 'mph' : 'km/h';
+const unitP = () => units.precip ? 'in' : 'mm';
+const unitD = () => units.dist ? 'mi' : 'km';
+
+const fmtT = c => units.temp ? toF(c).toFixed(1) : c.toFixed(1);
+const fmtW = k => units.wind ? toMph(k).toFixed(1) : k.toFixed(1);
+const fmtP = m => units.precip ? toIn(m).toFixed(2) : m.toFixed(1);
+const fmtD = k => units.dist ? toMi(k).toFixed(1) : k.toFixed(1);
 
 function wxLabel(code) {
   const m = {0:'Clear',1:'Mostly Clear',2:'Partly Cloudy',3:'Overcast',45:'Foggy',48:'Icy Fog',
@@ -449,17 +470,84 @@ function tick() {
 setInterval(tick,1000); tick();
 
 // ── UNIT TOGGLE ────────────────────────────────────────────────
-function toggleUnit() {
-  useFahrenheit = !useFahrenheit;
-  document.getElementById('unitToggle').classList.toggle('on', useFahrenheit);
-  document.getElementById('labelC').classList.toggle('active', !useFahrenheit);
-  document.getElementById('labelF').classList.toggle('active',  useFahrenheit);
+function toggleUnit(type, specificVal = null) {
+  units[type] = specificVal !== null ? specificVal : !units[type];
+  
+  document.getElementById(`toggle-${type}`).classList.toggle('on', units[type]);
+  const lblA = document.getElementById(`label-${type}-${type === 'temp' ? 'c' : type === 'wind' ? 'km' : type === 'precip' ? 'mm' : 'km'}`);
+  const lblB = document.getElementById(`label-${type}-${type === 'temp' ? 'f' : type === 'wind' ? 'mi' : type === 'precip' ? 'in' : 'mi'}`);
+  if(lblA) lblA.classList.toggle('active', !units[type]);
+  if(lblB) lblB.classList.toggle('active', units[type]);
+
   if (lastData) {
     updateMetrics(lastData);
     drawTempChart(lastData);
+    drawWindChart(lastData);
+    drawPrecipChart(lastData);
     drawHumidChart(lastData);
     drawCityChart();
   }
+}
+
+// ── CITY MANAGEMENT ────────────────────────────────────────────
+function renderCityBar() {
+  const bar = document.getElementById('cityBar');
+  const addBtn = bar.querySelector('.add-btn');
+  
+  // Clear existing pills
+  bar.querySelectorAll('.city-pill:not(.add-btn)').forEach(p => p.remove());
+
+  cities.forEach(city => {
+    const pill = document.createElement('button');
+    pill.className = `city-pill ${city.name === currentCity.name ? 'active' : ''}`;
+    pill.innerHTML = `<span>${city.name}</span>`;
+    
+    const close = document.createElement('span');
+    close.className = 'remove-city';
+    close.textContent = '✕';
+    close.title = 'Remove city';
+    close.onclick = (e) => { 
+      e.stopPropagation(); 
+      removeCity(city.name); 
+    };
+    pill.appendChild(close);
+
+    pill.onclick = (e) => { 
+      if(!e.target.closest('.remove-city')) selectCity(city); 
+    };
+    
+    bar.insertBefore(pill, addBtn);
+  });
+}
+
+function selectCity(city) {
+  currentCity = city;
+  renderCityBar();
+  loadDashboard(city.lat, city.lon, city.name);
+}
+
+function removeCity(name) {
+  cities = cities.filter(c => c.name !== name);
+  localStorage.setItem('atmos_cities', JSON.stringify(cities));
+  
+  if (cities.length === 0) {
+    cities = [...DEFAULT_CITIES];
+    selectCity(cities[0]);
+  } else if (currentCity.name === name) {
+    selectCity(cities[0]);
+  } else {
+    renderCityBar();
+    drawCityChart(); 
+  }
+}
+
+async function addCustomCity(name, lat, lon) {
+  closeModal();
+  if (!cities.find(c => c.name === name)) {
+    cities.push({ name, lat, lon });
+    localStorage.setItem('atmos_cities', JSON.stringify(cities));
+  }
+  selectCity({ name, lat, lon });
 }
 
 // ── CHART DEFAULTS ─────────────────────────────────────────────
@@ -487,28 +575,35 @@ async function fetchWeather(lat, lon) {
 // ── METRICS ────────────────────────────────────────────────────
 function updateMetrics(data) {
   const c = data.current, h = data.hourly;
-  document.getElementById('u-temp').textContent = unit();
+  
+  document.getElementById('u-temp').textContent = unitT();
   setVal('m-temp',   fmtT(c.temperature_2m));
-  setVal('m-feels',  `Feels like ${fmtT(c.apparent_temperature)}${unit()}`);
-  setVal('m-wind',   c.wind_speed_10m.toFixed(0));
+  setVal('m-feels',  `Feels like ${fmtT(c.apparent_temperature)}${unitT()}`);
+  
+  document.getElementById('u-wind').textContent = unitW();
+  setVal('m-wind',   fmtW(c.wind_speed_10m));
   setVal('m-winddir',`${windDir(c.wind_direction_10m)} · ${c.wind_direction_10m}°`);
+  
   setVal('m-humid',  c.relative_humidity_2m);
   const dp = h.dew_point_2m[0];
-  setVal('m-dew',    `Dew point ${dp!=null ? fmtT(dp)+unit() : '—'}`);
-  setVal('m-precip', c.precipitation.toFixed(1));
+  setVal('m-dew',    `Dew point ${dp!=null ? fmtT(dp)+unitT() : '—'}`);
+  
+  document.getElementById('u-precip').textContent = unitP();
+  setVal('m-precip', fmtP(c.precipitation));
   const r24 = h.precipitation.slice(0,24).reduce((a,b)=>a+b,0);
-  setVal('m-precip24',`24h total ${r24.toFixed(1)} mm`);
+  setVal('m-precip24',`24h total ${fmtP(r24)} ${unitP()}`);
+  
   setVal('m-pressure', c.surface_pressure.toFixed(0));
   setVal('m-cond',   wxLabel(c.weather_code));
   setVal('m-uv',     c.uv_index?.toFixed(1) ?? '—');
-  const vis = h.visibility[0];
-  setVal('m-vis',    vis ? `Visibility ${(vis/1000).toFixed(1)} km` : 'Visibility —');
+  
+  const vis = h.visibility[0] ? h.visibility[0] / 1000 : null; // Original is meters, convert to km
+  setVal('m-vis',    vis ? `Visibility ${fmtD(vis)} ${unitD()}` : 'Visibility —');
 }
 
 function setVal(id, val) {
   const el = document.getElementById(id);
   if (!el) return;
-  // For metric values that have a child .m-unit span, update only the text node
   if (el.firstChild && el.firstChild.nodeType === 3) {
     el.firstChild.nodeValue = val;
   } else {
@@ -516,45 +611,79 @@ function setVal(id, val) {
   }
 }
 
-// ── TEMP CHART ─────────────────────────────────────────────────
+// ── TEMP CHART ──────────────────────────────────────────────
 function drawTempChart(data) {
   destroyChart('temp');
-  const hrs    = data.hourly.time.slice(0,168);
-  const raw    = data.hourly.temperature_2m.slice(0,168);
-  const temps  = useFahrenheit ? raw.map(toF) : raw;
-  const labels = hrs.map((t,i) => i%24===0 ? new Date(t).toLocaleDateString('en',{weekday:'short'}) : '');
+  
+  const rawTimes = data.hourly.time.slice(0, 168);
+  const rawTemps = data.hourly.temperature_2m.slice(0, 168);
+  const temps = units.temp ? rawTemps.map(toF) : rawTemps;
+  
+  const fullLabels = rawTimes.map(t => {
+    const d = new Date(t);
+    const day = d.toLocaleDateString('en', { weekday: 'short' });
+    const hour = d.getHours().toString().padStart(2, '0') + ':00';
+    return `${day}, ${hour}`;
+  });
 
-  const ctx  = document.getElementById('tempChart').getContext('2d');
+  const ctx = document.getElementById('tempChart').getContext('2d');
   const grad = ctx.createLinearGradient(0,0,0,260);
   grad.addColorStop(0,'rgba(196,130,26,0.22)');
   grad.addColorStop(1,'rgba(196,130,26,0.0)');
-
+  
   charts['temp'] = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [{
-      data: temps, borderColor: '#c4821a',
-      backgroundColor: grad, borderWidth: 2.5,
-      pointRadius: 0, pointHoverRadius: 5,
-      pointHoverBackgroundColor: '#c4821a',
-      fill: true, tension: 0.4
-    }]},
+    data: { 
+      labels: fullLabels, 
+      datasets: [{ 
+        data: temps, 
+        borderColor: '#c4821a', 
+        backgroundColor: grad, 
+        borderWidth: 2.5, 
+        pointRadius: 0, 
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: '#c4821a',
+        fill: true, 
+        tension: 0.4 
+      }]
+    },
     options: {
       responsive: true,
-      interaction: { intersect:false, mode:'index' },
+      interaction: {
+        intersect: false,
+        mode: 'index',
+      },
       plugins: {
-        legend: { display:false },
+        legend: { display: false },
         tooltip: {
-          backgroundColor:'#faf7f2', borderColor:'#d8cfc0', borderWidth:1,
-          titleColor:'#c4821a', bodyColor:'#4a3f30', padding:10,
+          backgroundColor: '#faf7f2',
+          borderColor: '#d8cfc0',
+          borderWidth: 1,
+          titleColor: '#c4821a',
+          titleFont: { weight: 'bold' },
+          bodyColor: '#4a3f30',
+          padding: 12,
+          displayColors: false,
           callbacks: {
-            title: items => new Date(hrs[items[0].dataIndex]).toLocaleString('en',{weekday:'short',hour:'numeric',minute:'2-digit'}),
-            label: item  => ` ${item.raw.toFixed(1)}${unit()}`
+            label: (context) => ` ${context.parsed.y.toFixed(1)}${unitT()}`
           }
         }
       },
       scales: {
-        x: { grid:{color:GRID}, ticks:{color:'#8a7a68', maxRotation:0} },
-        y: { grid:{color:GRID}, ticks:{color:'#8a7a68', callback: v => v+unit()} }
+        x: {
+          grid: { color: GRID },
+          ticks: {
+            maxRotation: 0,
+            autoSkip: false,
+            callback: function(value, index) {
+              return index % 24 === 0 ? fullLabels[index].split(',')[0] : '';
+            }
+          }
+        },
+        y: {
+          grid: { color: GRID },
+          ticks: { callback: v => v + unitT() }
+        }
       }
     }
   });
@@ -565,15 +694,18 @@ function drawTempChart(data) {
 function drawWindChart(data) {
   destroyChart('wind');
   const hrs    = data.hourly.time.slice(0,48);
-  const speeds = data.hourly.wind_speed_10m.slice(0,48);
+  const raw    = data.hourly.wind_speed_10m.slice(0,48);
+  const speeds = units.wind ? raw.map(toMph) : raw;
   const labels = hrs.map(t => new Date(t).getHours()+'h');
+
+  document.getElementById('sub-wind-unit').textContent = `48-hour forecast · ${unitW()}`;
 
   const ctx = document.getElementById('windChart').getContext('2d');
   charts['wind'] = new Chart(ctx, {
     type: 'bar',
     data: { labels, datasets: [{
       data: speeds,
-      backgroundColor: speeds.map(s =>
+      backgroundColor: raw.map(s =>
         s>50 ? 'rgba(196,74,26,0.85)' :
         s>30 ? 'rgba(196,130,26,0.75)' :
         s>15 ? 'rgba(26,74,140,0.65)' : 'rgba(26,122,110,0.55)'
@@ -587,12 +719,12 @@ function drawWindChart(data) {
         tooltip: {
           backgroundColor:'#faf7f2', borderColor:'#d8cfc0', borderWidth:1,
           titleColor:'#c44a1a', bodyColor:'#4a3f30',
-          callbacks: { label: item => ` ${item.raw.toFixed(1)} km/h` }
+          callbacks: { label: item => ` ${item.raw.toFixed(1)} ${unitW()}` }
         }
       },
       scales: {
         x: { grid:{color:GRID}, ticks:{color:'#8a7a68', maxTicksLimit:12} },
-        y: { grid:{color:GRID}, ticks:{color:'#8a7a68', callback: v => v+' km/h'} }
+        y: { grid:{color:GRID}, ticks:{color:'#8a7a68', callback: v => v+' '+unitW()} }
       }
     }
   });
@@ -603,14 +735,17 @@ function drawWindChart(data) {
 function drawPrecipChart(data) {
   destroyChart('precip');
   const labels = data.daily.time.map(t => new Date(t).toLocaleDateString('en',{weekday:'short',day:'numeric'}));
-  const vals   = data.daily.precipitation_sum;
+  const raw    = data.daily.precipitation_sum;
+  const vals   = units.precip ? raw.map(toIn) : raw;
+
+  document.getElementById('sub-precip-unit').textContent = `daily totals · ${unitP()}`;
 
   const ctx = document.getElementById('precipChart').getContext('2d');
   charts['precip'] = new Chart(ctx, {
     type: 'bar',
     data: { labels, datasets: [{
       data: vals,
-      backgroundColor: vals.map(p =>
+      backgroundColor: raw.map(p =>
         p>20 ? 'rgba(26,122,110,0.9)' :
         p>5  ? 'rgba(26,122,110,0.6)' :
         p>0  ? 'rgba(26,122,110,0.3)' : 'rgba(216,207,192,0.4)'
@@ -624,12 +759,12 @@ function drawPrecipChart(data) {
         tooltip: {
           backgroundColor:'#faf7f2', borderColor:'#d8cfc0', borderWidth:1,
           titleColor:'#1a7a6e', bodyColor:'#4a3f30',
-          callbacks: { label: item => ` ${item.raw.toFixed(1)} mm` }
+          callbacks: { label: item => ` ${item.raw.toFixed(2)} ${unitP()}` }
         }
       },
       scales: {
         x: { grid:{color:GRID}, ticks:{color:'#8a7a68', maxRotation:25} },
-        y: { grid:{color:GRID}, ticks:{color:'#8a7a68', callback: v => v+'mm'} }
+        y: { grid:{color:GRID}, ticks:{color:'#8a7a68', callback: v => v+unitP()} }
       }
     }
   });
@@ -642,7 +777,7 @@ function drawHumidChart(data) {
   const hrs   = data.hourly.time.slice(0,48);
   const humid = data.hourly.relative_humidity_2m.slice(0,48);
   const raw   = data.hourly.temperature_2m.slice(0,48);
-  const temps = useFahrenheit ? raw.map(toF) : raw;
+  const temps = units.temp ? raw.map(toF) : raw;
   const labels = hrs.map(t => new Date(t).getHours()+'h');
 
   const ctx  = document.getElementById('humidChart').getContext('2d');
@@ -655,7 +790,7 @@ function drawHumidChart(data) {
     data: { labels, datasets: [
       { label:'Humidity %', data:humid, borderColor:'#5a2a8c', backgroundColor:grad,
         borderWidth:2, pointRadius:0, fill:true, tension:0.4, yAxisID:'y' },
-      { label:`Temp ${unit()}`, data:temps, borderColor:'rgba(196,130,26,0.6)', backgroundColor:'transparent',
+      { label:`Temp ${unitT()}`, data:temps, borderColor:'rgba(196,130,26,0.6)', backgroundColor:'transparent',
         borderWidth:1.5, pointRadius:0, borderDash:[5,4], tension:0.4, yAxisID:'y2' }
     ]},
     options: {
@@ -672,7 +807,7 @@ function drawHumidChart(data) {
         x:  { grid:{color:GRID}, ticks:{color:'#8a7a68', maxTicksLimit:12} },
         y:  { grid:{color:GRID}, ticks:{color:'#5a2a8c', callback:v=>v+'%'}, min:0, max:100 },
         y2: { position:'right', grid:{drawOnChartArea:false},
-              ticks:{color:'rgba(196,130,26,0.7)', callback:v=>v+unit()} }
+              ticks:{color:'rgba(196,130,26,0.7)', callback:v=>v+unitT()} }
       }
     }
   });
@@ -681,17 +816,13 @@ function drawHumidChart(data) {
 
 // ── CITY CHART ─────────────────────────────────────────────────
 async function drawCityChart() {
-  const cities = [...BASE_CITIES];
-  if (customCity && !cities.find(c=>c.name===customCity.name)) cities.push(customCity);
-  if (!cities.find(c=>c.name===currentCity.name)) cities.push(currentCity);
-
   const results = await Promise.all(cities.map(c =>
     fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m&timezone=auto`)
       .then(r=>r.json()).catch(()=>null)
   ));
 
   const raw   = results.map(r => r ? r.current.temperature_2m : null);
-  const temps = useFahrenheit ? raw.map(t=>t!=null?toF(t):null) : raw;
+  const temps = units.temp ? raw.map(t=>t!=null?toF(t):null) : raw;
 
   destroyChart('city');
   const ctx = document.getElementById('cityChart').getContext('2d');
@@ -713,11 +844,11 @@ async function drawCityChart() {
         tooltip: {
           backgroundColor:'#faf7f2', borderColor:'#d8cfc0', borderWidth:1,
           titleColor:'#1a1510', bodyColor:'#4a3f30',
-          callbacks: { label: item => ` ${item.raw?.toFixed(1) ?? '—'}${unit()}` }
+          callbacks: { label: item => ` ${item.raw?.toFixed(1) ?? '—'}${unitT()}` }
         }
       },
       scales: {
-        x: { grid:{color:GRID}, ticks:{color:'#8a7a68', callback: v=>v+unit()} },
+        x: { grid:{color:GRID}, ticks:{color:'#8a7a68', callback: v=>v+unitT()} },
         y: { grid:{color:GRID}, ticks:{color:'#4a3f30', font:{size:10}} }
       }
     }
@@ -742,20 +873,11 @@ async function loadDashboard(lat, lon, name) {
   drawCityChart();
 }
 
-// ── CITY SELECT ────────────────────────────────────────────────
-function selectCity(btn) {
-  document.querySelectorAll('.city-pill').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  currentCity = { lat:parseFloat(btn.dataset.lat), lon:parseFloat(btn.dataset.lon), name:btn.dataset.name };
-  loadDashboard(currentCity.lat, currentCity.lon, currentCity.name);
-}
-
-// ── MODAL ──────────────────────────────────────────────────────
+// ── MODAL & SEARCH ──────────────────────────────────────────────
 function openModal() {
   document.getElementById('searchModal').classList.add('open');
   setTimeout(()=>document.getElementById('geoInput').focus(), 50);
   document.getElementById('geoStatus').textContent = '';
-  document.getElementById('geoStatus').className = 'modal-status';
   document.getElementById('geoResults').classList.remove('visible');
   document.getElementById('geoResults').innerHTML = '';
   document.getElementById('geoInput').value = '';
@@ -765,11 +887,6 @@ function closeModal() {
   document.getElementById('searchModal').classList.remove('open');
 }
 
-document.getElementById('searchModal').addEventListener('click', e => {
-  if (e.target === e.currentTarget) closeModal();
-});
-
-// ── GEOCODE ────────────────────────────────────────────────────
 async function geocodeCity() {
   const q = document.getElementById('geoInput').value.trim();
   if (!q) return;
@@ -779,7 +896,7 @@ async function geocodeCity() {
   const list   = document.getElementById('geoResults');
 
   btn.disabled = true; btn.textContent = 'Searching…';
-  status.textContent = ''; status.className = 'modal-status';
+  status.textContent = ''; 
   list.classList.remove('visible'); list.innerHTML = '';
 
   try {
@@ -787,8 +904,7 @@ async function geocodeCity() {
     const json = await r.json();
 
     if (!json.results || json.results.length === 0) {
-      status.textContent = 'No results found. Try a different spelling.';
-      status.className = 'modal-status';
+      status.textContent = 'No results found.';
     } else {
       json.results.forEach(place => {
         const li    = document.createElement('li');
@@ -803,40 +919,13 @@ async function geocodeCity() {
     }
   } catch(e) {
     status.textContent = 'Network error — please try again.';
-    status.className = 'modal-status';
   }
-
   btn.disabled = false; btn.textContent = 'Search';
 }
 
-function addCustomCity(name, lat, lon) {
-  closeModal();
-  customCity = { name, lat, lon };
-
-  // Remove old custom pill
-  const old = document.querySelector('.city-pill[data-custom]');
-  if (old) old.remove();
-
-  // Insert new pill before "+ Add City"
-  const addBtn = document.querySelector('.city-pill.add-btn');
-  const pill = document.createElement('button');
-  pill.className = 'city-pill';
-  pill.dataset.lat = lat;
-  pill.dataset.lon = lon;
-  pill.dataset.name = name;
-  pill.dataset.custom = 'true';
-  pill.textContent = name;
-  pill.onclick = function() { selectCity(this); };
-  addBtn.parentNode.insertBefore(pill, addBtn);
-
-  document.querySelectorAll('.city-pill').forEach(b=>b.classList.remove('active'));
-  pill.classList.add('active');
-  currentCity = { lat, lon, name };
-  loadDashboard(lat, lon, name);
-}
-
 // ── INIT ──────────────────────────────────────────────────────
-loadDashboard(40.7128, -74.0060, 'New York');
+renderCityBar();
+loadDashboard(currentCity.lat, currentCity.lon, currentCity.name);
 setInterval(() => loadDashboard(currentCity.lat, currentCity.lon, currentCity.name), 600000);
 </script>
 </body>
