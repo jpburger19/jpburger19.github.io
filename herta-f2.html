@@ -193,14 +193,6 @@
     background: var(--accent);
   }
 
-  .flag-btn.has-data .flag-emoji::after {
-    content: '●';
-    position: absolute;
-    top: 2px; right: 2px;
-    font-size: 6px;
-    color: var(--accent);
-  }
-
   .flag-emoji {
     font-size: 26px;
     position: relative;
@@ -682,10 +674,10 @@ const races = [
     circuit: "Miami International Autodrome",
     date: "01-03 May 2026",
     location: "Miami, Florida",
-    practice: [],
-    qualifying: [],
-    sprint: [],
-    feature: [],
+    practice: [{pos: 1, laps: 19, time: "1:40.320", gap: "-", crashes: 0}],
+    qualifying: [{pos: 14, laps: 13, time: "1:40.473", gap: "+0.585s", crashes: 0}],
+    sprint: [{pos: 15, laps: 23, time: "39:53.445", gap: "+27.172s", bestLap: "1:42.714", crashes: 0}],
+    feature: [{pos: 8, laps: 25, time: "56:32.998", gap: "+10.969s", bestLap: "1:58.193", crashes: 0}],
     crashed: false
   },
   {
@@ -696,10 +688,10 @@ const races = [
     circuit: "Circuit Gilles Villeneuve",
     date: "22-24 May 2026",
     location: "Montreal, Canada",
-    practice: [],
-    qualifying: [],
-    sprint: [],
-    feature: [],
+    practice: [{pos: 9, laps: 22, time: "1:23.042", gap: "+0.518s", crashes: 0}],
+    qualifying: [{pos: 19, laps: 15, time: "1:22.857", gap: "+1.435s", crashes: 0}],
+    sprint: [{pos: 9, laps: 28, time: "43:47.163", gap: "+10.294s", bestLap: "1:24.317", crashes: 0}],
+    feature: [{pos: 7, laps: 37, time: "1:03:13.369", gap: "+5.346s", bestLap: "1:25.156", crashes: 0}],
     crashed: false
   },
   {
@@ -710,10 +702,10 @@ const races = [
     circuit: "Circuit de Monaco",
     date: "04-07 Jun 2026",
     location: "Monte Carlo, Monaco",
-    practice: [],
-    qualifying: [],
-    sprint: [],
-    feature: [],
+    practice: [{pos: 15, laps: 24, time: "1:23.212", gap: "+1.403s", crashes: 0}],
+    qualifying: [{pos: 7, laps: 11, time: "1:21.772", gap: "+0.719s", crashes: 0}],
+    sprint: [{pos: 15, laps: 30, time: "44:23.806", gap: "+77.399s", bestLap: "1:24.793", crashes: 0}],
+    feature: [{pos: 19, laps: 42, time: "1:01:34.639", gap: "+75.197s", bestLap: "1:24.844", crashes: 0}],
     crashed: false
   },
   {
