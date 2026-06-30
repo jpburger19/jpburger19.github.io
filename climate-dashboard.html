@@ -63,6 +63,7 @@ header {
 .logo-sub {
   font-size: clamp(8px, 0.8vw, 10px); letter-spacing:2px; color:var(--ink3);
   text-transform:uppercase; font-weight:300;
+  padding-top: 5px;
 }
 .header-controls { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
 
@@ -736,17 +737,26 @@ function drawTempChart(data) {
 // ── WIND CHART ─────────────────────────────────────────────────
 function drawWindChart(data) {
   destroyChart('wind');
-  const hrs    = data.hourly.time.slice(0,48);
-  const raw    = data.hourly.wind_speed_10m.slice(0,48);
+  const hrs    = data.hourly.time.slice(0, 48);
+  const raw    = data.hourly.wind_speed_10m.slice(0, 48);
   const speeds = units.wind ? raw.map(toMph) : raw;
-  const labels = hrs.map(t => new Date(t).getHours()+'h');
+
+  // Build readable full labels for tooltips: "Mon 12PM", "Tue 6AM", etc.
+  const fullLabels = hrs.map(t => {
+    const d    = new Date(t);
+    const day  = d.toLocaleDateString('en', { weekday: 'short' });
+    const h    = d.getHours();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12  = h % 12 === 0 ? 12 : h % 12;
+    return `${day} ${h12}${ampm}`;
+  });
 
   document.getElementById('sub-wind-unit').textContent = `48-hour forecast · ${unitW()}`;
 
   const ctx = document.getElementById('windChart').getContext('2d');
   charts['wind'] = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets: [{
+    data: { labels: fullLabels, datasets: [{
       data: speeds,
       backgroundColor: raw.map(s =>
         s>50 ? 'rgba(196,74,26,0.85)' :
@@ -757,17 +767,41 @@ function drawWindChart(data) {
     }]},
     options: {
       responsive: true,
+      maintainAspectRatio: true,
       plugins: {
-        legend: { display:false },
+        legend: { display: false },
         tooltip: {
-          backgroundColor:'#2a2a2a', borderColor:'#484848', borderWidth:1,
-          titleColor:'#c44a1a', bodyColor:'#c8bfb0',
-          callbacks: { label: item => ` ${item.raw.toFixed(1)} ${unitW()}` }
+          backgroundColor: '#2a2a2a', borderColor: '#484848', borderWidth: 1,
+          titleColor: '#c44a1a', bodyColor: '#c8bfb0',
+          callbacks: {
+            title: items => fullLabels[items[0].dataIndex],
+            label: item  => ` ${item.raw.toFixed(1)} ${unitW()}`
+          }
         }
       },
       scales: {
-        x: { grid:{color:GRID}, ticks:{color:'#8a7a68', maxTicksLimit:12} },
-        y: { grid:{color:GRID}, ticks:{color:'#8a7a68', callback: v => v+' '+unitW()} }
+        x: {
+          grid: { color: GRID },
+          ticks: {
+            color: '#8a7a68',
+            maxRotation: 0,
+            autoSkip: false,
+            callback: function(value, index) {
+              const d = new Date(hrs[index]);
+              const h = d.getHours();
+              if (h % 6 !== 0) return '';
+              if (h === 0)  return d.toLocaleDateString('en', { weekday: 'short' });
+              if (h === 6)  return '6AM';
+              if (h === 12) return '12PM';
+              if (h === 18) return '6PM';
+              return '';
+            }
+          }
+        },
+        y: {
+          grid: { color: GRID },
+          ticks: { color: '#8a7a68', callback: v => v + ' ' + unitW() }
+        }
       }
     }
   });
@@ -777,37 +811,54 @@ function drawWindChart(data) {
 // ── PRECIP CHART ───────────────────────────────────────────────
 function drawPrecipChart(data) {
   destroyChart('precip');
-  const labels = data.daily.time.map(t => new Date(t).toLocaleDateString('en',{weekday:'short',day:'numeric'}));
-  const raw    = data.daily.precipitation_sum;
-  const vals   = units.precip ? raw.map(toIn) : raw;
+  const raw  = data.daily.precipitation_sum;
+  const vals = units.precip ? raw.map(toIn) : raw;
+
+  // Short labels for the axis ticks (e.g. "Mon"), full labels for tooltips
+  const tickLabels = data.daily.time.map(t =>
+    new Date(t).toLocaleDateString('en', { weekday: 'short' })
+  );
+  const fullLabels = data.daily.time.map(t =>
+    new Date(t).toLocaleDateString('en', { weekday: 'long', month: 'short', day: 'numeric' })
+  );
 
   document.getElementById('sub-precip-unit').textContent = `daily totals · ${unitP()}`;
 
   const ctx = document.getElementById('precipChart').getContext('2d');
   charts['precip'] = new Chart(ctx, {
     type: 'bar',
-    data: { labels, datasets: [{
+    data: { labels: tickLabels, datasets: [{
       data: vals,
       backgroundColor: raw.map(p =>
         p>20 ? 'rgba(26,122,110,0.9)' :
         p>5  ? 'rgba(26,122,110,0.6)' :
-        p>0  ? 'rgba(26,122,110,0.3)' : 'rgba(216,207,192,0.4)'
+        p>0  ? 'rgba(26,122,110,0.3)' : 'rgba(216,207,192,0.15)'
       ),
       borderColor: 'transparent', borderRadius: 4
     }]},
     options: {
       responsive: true,
+      maintainAspectRatio: true,
       plugins: {
-        legend: { display:false },
+        legend: { display: false },
         tooltip: {
-          backgroundColor:'#2a2a2a', borderColor:'#484848', borderWidth:1,
-          titleColor:'#1a7a6e', bodyColor:'#c8bfb0',
-          callbacks: { label: item => ` ${item.raw.toFixed(2)} ${unitP()}` }
+          backgroundColor: '#2a2a2a', borderColor: '#484848', borderWidth: 1,
+          titleColor: '#1a7a6e', bodyColor: '#c8bfb0',
+          callbacks: {
+            title: items => fullLabels[items[0].dataIndex],
+            label: item  => ` ${item.raw.toFixed(2)} ${unitP()}`
+          }
         }
       },
       scales: {
-        x: { grid:{color:GRID}, ticks:{color:'#8a7a68', maxRotation:25} },
-        y: { grid:{color:GRID}, ticks:{color:'#8a7a68', callback: v => v+unitP()} }
+        x: {
+          grid: { color: GRID },
+          ticks: { color: '#8a7a68', maxRotation: 0, autoSkip: false }
+        },
+        y: {
+          grid: { color: GRID },
+          ticks: { color: '#8a7a68', callback: v => v + unitP() }
+        }
       }
     }
   });
@@ -817,40 +868,70 @@ function drawPrecipChart(data) {
 // ── HUMID CHART ────────────────────────────────────────────────
 function drawHumidChart(data) {
   destroyChart('humid');
-  const hrs   = data.hourly.time.slice(0,48);
-  const humid = data.hourly.relative_humidity_2m.slice(0,48);
-  const raw   = data.hourly.temperature_2m.slice(0,48);
+  const hrs   = data.hourly.time.slice(0, 48);
+  const humid = data.hourly.relative_humidity_2m.slice(0, 48);
+  const raw   = data.hourly.temperature_2m.slice(0, 48);
   const temps = units.temp ? raw.map(toF) : raw;
-  const labels = hrs.map(t => new Date(t).getHours()+'h');
+
+  // Full labels for tooltips: "Mon 3PM", "Tue 12AM", etc.
+  const fullLabels = hrs.map(t => {
+    const d    = new Date(t);
+    const day  = d.toLocaleDateString('en', { weekday: 'short' });
+    const h    = d.getHours();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12  = h % 12 === 0 ? 12 : h % 12;
+    return `${day} ${h12}${ampm}`;
+  });
 
   const ctx  = document.getElementById('humidChart').getContext('2d');
-  const grad = ctx.createLinearGradient(0,0,0,240);
-  grad.addColorStop(0,'rgba(90,42,140,0.22)');
-  grad.addColorStop(1,'rgba(90,42,140,0)');
+  const grad = ctx.createLinearGradient(0, 0, 0, 240);
+  grad.addColorStop(0, 'rgba(90,42,140,0.22)');
+  grad.addColorStop(1, 'rgba(90,42,140,0)');
 
   charts['humid'] = new Chart(ctx, {
     type: 'line',
-    data: { labels, datasets: [
-      { label:'Humidity %', data:humid, borderColor:'#5a2a8c', backgroundColor:grad,
-        borderWidth:2, pointRadius:0, fill:true, tension:0.4, yAxisID:'y' },
-      { label:`Temp ${unitT()}`, data:temps, borderColor:'rgba(196,130,26,0.6)', backgroundColor:'transparent',
-        borderWidth:1.5, pointRadius:0, borderDash:[5,4], tension:0.4, yAxisID:'y2' }
+    data: { labels: fullLabels, datasets: [
+      { label: 'Humidity %', data: humid, borderColor: '#5a2a8c', backgroundColor: grad,
+        borderWidth: 2, pointRadius: 0, fill: true, tension: 0.4, yAxisID: 'y' },
+      { label: `Temp ${unitT()}`, data: temps, borderColor: 'rgba(196,130,26,0.6)', backgroundColor: 'transparent',
+        borderWidth: 1.5, pointRadius: 0, borderDash: [5,4], tension: 0.4, yAxisID: 'y2' }
     ]},
     options: {
       responsive: true,
-      interaction: { intersect:false, mode:'index' },
+      maintainAspectRatio: true,
+      interaction: { intersect: false, mode: 'index' },
       plugins: {
-        legend: { display:true, labels:{color:'#8a7a68', boxWidth:10, font:{size:9}} },
+        legend: { display: true, labels: { color: '#8a7a68', boxWidth: 10, font: { size: 9 } } },
         tooltip: {
-          backgroundColor:'#2a2a2a', borderColor:'#484848', borderWidth:1,
-          titleColor:'#5a2a8c', bodyColor:'#c8bfb0'
+          backgroundColor: '#2a2a2a', borderColor: '#484848', borderWidth: 1,
+          titleColor: '#5a2a8c', bodyColor: '#c8bfb0',
+          callbacks: {
+            title: items => fullLabels[items[0].dataIndex]
+          }
         }
       },
       scales: {
-        x:  { grid:{color:GRID}, ticks:{color:'#8a7a68', maxTicksLimit:12} },
-        y:  { grid:{color:GRID}, ticks:{color:'#5a2a8c', callback:v=>v+'%'}, min:0, max:100 },
-        y2: { position:'right', grid:{drawOnChartArea:false},
-              ticks:{color:'rgba(196,130,26,0.7)', callback:v=>v+unitT()} }
+        x: {
+          grid: { color: GRID },
+          ticks: {
+            color: '#8a7a68',
+            maxRotation: 0,
+            autoSkip: false,
+            callback: function(value, index) {
+              const d = new Date(hrs[index]);
+              const h = d.getHours();
+              if (h % 6 !== 0) return '';
+              if (h === 0)  return d.toLocaleDateString('en', { weekday: 'short' });
+              if (h === 6)  return '6AM';
+              if (h === 12) return '12PM';
+              if (h === 18) return '6PM';
+              return '';
+            }
+          }
+        },
+        y:  { grid: { color: GRID }, ticks: { color: '#5a2a8c', callback: v => v + '%' }, min: 0, max: 100 },
+        y2: { position: 'right', grid: { drawOnChartArea: false },
+              ticks: { color: 'rgba(196,130,26,0.7)', callback: v => v + unitT() } }
       }
     }
   });
