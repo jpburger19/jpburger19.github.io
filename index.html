@@ -1,579 +1,546 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JP Burger | Portfolio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root {
-            --ink: #111827;
-            --ink-soft: #374151;
-            --ink-muted: #6b7280;
-            --green-dark: #0a5c20;
-            --green: #0f7a2c;
-            --green-mid: #16a34a;
-            --green-light: #dcfce7;
-            --green-faint: #f0fdf4;
-            --border: #e5e7eb;
-            --white: #ffffff;
-            --bg: #f9fafb;
-        }
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JP Burger | Portfolio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&amp;family=Newsreader:ital,wght@0,400;0,500;1,400&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+/* Hallmark · pre-emit critique: P5 H4 E4 S4 R4 V5
+ * macrostructure: Catalogue (uniform index cards · category label bands · hairline rows · card-internal links · no big display heading)
+ * genre: editorial · theme: Riso — warm peach paper · Public Sans 800 display · Newsreader body serif · Space Mono labels
+ * accent: riso cyan 220 (primary, hairlines/links) · riso yellow 95 (label bands) · riso pink 12 (single moment — active state)
+ * nav: N6 Newspaper masthead · footer: Ft4 Dense colophon
+ * craft: tier-A pure-CSS riso misregistration on the masthead wordmark + per-card plate swatches — no photos, no re-drawn chrome
+ * motion: one-shot masthead fade on load · card hover-lift only · reveal: none (catalogue default)
+ * diversification: differs from prior build (Specimen · N3 side-rail · Ft2) on macrostructure, nav, footer, and paper band (light-warm vs light-cool)
+ */
 
-        *, *::before, *::after { box-sizing: border-box; }
+:root {
+  --color-paper:       oklch(91%  0.034 30);
+  --color-paper-2:     oklch(87%  0.040 30);
+  --color-paper-3:     oklch(82%  0.046 30);
+  --color-rule:        oklch(70%  0.040 30);
+  --color-rule-2:      oklch(56%  0.060 30);
+  --color-muted:       oklch(46%  0.060 30);
+  --color-neutral:     oklch(34%  0.060 30);
+  --color-ink-2:       oklch(22%  0.060 30);
+  --color-ink:         oklch(18%  0.060 30);
+  --color-accent:      oklch(58%  0.170 220);
+  --color-accent-deep: oklch(48%  0.170 220);
+  --color-accent-2:    oklch(78%  0.180 95);
+  --color-accent-3:    oklch(60%  0.200 12);
+  --color-accent-ink:  oklch(42%  0.135 224);
+  --color-focus:       oklch(48%  0.170 220);
+  --color-on-accent-2: oklch(18%  0.060 30);
 
-        html { scroll-behavior: smooth; }
+  --ink-cyan:   oklch(58% 0.170 220 / 0.9);
+  --ink-pink:   oklch(62% 0.200 12  / 0.85);
 
-        body {
-            font-family: 'DM Sans', sans-serif;
-            margin: 0;
-            background: var(--bg);
-            color: var(--ink);
-            line-height: 1.7;
-            font-size: 16px;
-            -webkit-font-smoothing: antialiased;
-        }
+  --font-display: "Public Sans", "Albert Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-body:    "Newsreader", "Tiempos", ui-serif, Georgia, serif;
+  --font-label:   "Space Mono", "Geist Mono", ui-monospace, monospace;
 
-        /* ── Navigation ── */
-        nav {
-            background: rgba(255,255,255,0.92);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            padding: 0 10%;
-            height: 68px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
+  --text-xs:   0.75rem;
+  --text-sm:   0.875rem;
+  --text-base: 1.0625rem;
+  --text-md:   1.1875rem;
+  --text-lg:   1.375rem;
+  --text-xl:   1.75rem;
+  --text-2xl:  2.25rem;
+  --text-display: clamp(2.5rem, 5.5vw + 1rem, 4.5rem);
 
-        .nav-logo {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.35rem;
-            color: var(--green-dark);
-            letter-spacing: -0.01em;
-        }
+  --lh-tight:  0.95;
+  --lh-normal: 1.55;
+  --lh-relaxed: 1.7;
 
-        .nav-links { display: flex; gap: 8px; }
+  --tracking-display: -0.02em;
+  --tracking-label:   0.14em;
 
-        nav a {
-            text-decoration: none;
-            color: var(--ink-soft);
-            font-weight: 500;
-            font-size: 0.9rem;
-            padding: 8px 16px;
-            border-radius: 6px;
-            transition: background 0.2s, color 0.2s;
-            letter-spacing: 0.01em;
-        }
+  --space-3xs: 0.125rem;
+  --space-2xs: 0.25rem;
+  --space-xs:  0.5rem;
+  --space-sm:  0.75rem;
+  --space-md:  1rem;
+  --space-lg:  1.5rem;
+  --space-xl:  2.5rem;
+  --space-2xl: 4rem;
+  --space-3xl: 5.5rem;
 
-        nav a:hover {
-            background: var(--green-faint);
-            color: var(--green-dark);
-        }
+  --page-max:    76rem;
+  --page-gutter: clamp(1.25rem, 4vw, 3rem);
+  --measure:     62ch;
 
-        /* ── Hero Banner ── */
-        .hero {
-            background: linear-gradient(135deg, var(--green-dark) 0%, var(--green-mid) 100%);
-            padding: 80px 10% 70px;
-            position: relative;
-            overflow: hidden;
-        }
+  --rule-hair: 1px;
+  --rule-fine: 2px;
 
-        .hero::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image: radial-gradient(circle at 80% 20%, rgba(255,255,255,0.06) 0%, transparent 60%),
-                              radial-gradient(circle at 10% 80%, rgba(0,0,0,0.15) 0%, transparent 50%);
-        }
+  --radius-card: 2px;
+  --radius-pill: 2px;
+  --shadow-card: none;
 
-        .hero-inner {
-            max-width: 1100px;
-            margin: auto;
-            position: relative;
-        }
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-short: 200ms;
+  --dur-long: 500ms;
+}
 
-        .hero-eyebrow {
-            font-size: 0.78rem;
-            font-weight: 600;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: rgba(255,255,255,0.65);
-            margin-bottom: 16px;
-        }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { animation: none !important; }
+}
 
-        .hero h1 {
-            font-family: 'DM Serif Display', serif;
-            font-size: clamp(2.6rem, 5vw, 4rem);
-            color: var(--white);
-            margin: 0 0 20px;
-            line-height: 1.1;
-            letter-spacing: -0.02em;
-        }
+*, *::before, *::after { box-sizing: border-box; }
+html { overflow-x: clip; scroll-behavior: smooth; }
+body { overflow-x: clip; }
 
-        .hero-subtitle {
-            font-size: 1.1rem;
-            color: rgba(255,255,255,0.82);
-            max-width: 580px;
-            font-weight: 300;
-            margin-bottom: 32px;
-            line-height: 1.75;
-        }
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink-2);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--lh-relaxed);
+  font-variant-numeric: oldstyle-nums;
+  -webkit-font-smoothing: antialiased;
+}
 
-        .hero-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 36px; }
+/* faint riso paper grain — barely there, multiply blend */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
 
-        .hero-badge {
-            background: rgba(255,255,255,0.12);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: rgba(255,255,255,0.9);
-            padding: 6px 14px;
-            border-radius: 100px;
-            font-size: 0.82rem;
-            font-weight: 500;
-            backdrop-filter: blur(4px);
-        }
+::selection { background: var(--color-accent-2); color: var(--color-on-accent-2); }
 
-        .hero-social a {
-            color: rgba(255,255,255,0.7);
-            font-size: 1.3rem;
-            margin-right: 18px;
-            transition: color 0.2s, transform 0.2s;
-            display: inline-block;
-        }
+a { color: inherit; text-decoration: none; }
 
-        .hero-social a:hover { color: var(--white); transform: translateY(-2px); }
+:focus-visible {
+  outline: var(--rule-fine) solid var(--color-focus);
+  outline-offset: 3px;
+}
 
-        /* ── Layout ── */
-        .container { max-width: 1100px; margin: auto; padding: 50px 20px 80px; }
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-style: normal; /* headings always roman — no italic display type */
+  color: var(--color-ink);
+  margin: 0;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
 
-        /* ── Section ── */
-        .section {
-            background: var(--white);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 44px 48px;
-            margin-bottom: 24px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.03);
-        }
+em { font-style: italic; } /* italic survives only as body-copy emphasis */
 
-        .section-label {
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--green-mid);
-            margin-bottom: 8px;
-        }
+ul { margin: 0; padding: 0; list-style: none; }
 
-        .section h2 {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.75rem;
-            color: var(--ink);
-            margin: 0 0 28px;
-            letter-spacing: -0.02em;
-            line-height: 1.2;
-        }
+.kicker {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
 
-        /* ── About ── */
-        .about-body {
-            color: var(--ink-soft);
-            font-size: 1.02rem;
-        }
+.wrap {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: 0 var(--page-gutter);
+  position: relative;
+  z-index: 1;
+}
 
-        .about-body strong { color: var(--ink); font-weight: 600; }
+/* ── N6 Newspaper masthead ── */
+@keyframes mastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .about-body p { margin: 0 0 16px; }
-        .about-body p:last-child { margin-bottom: 0; }
+.nav-mast {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-xl) var(--page-gutter) 0;
+  text-align: center;
+  animation: mastIn var(--dur-long) var(--ease-out) both;
+}
 
-        /* ── Skills ── */
-        .skills-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 28px;
-        }
+.mast-line {
+  font-family: var(--font-label);
+  font-variant: small-caps;
+  letter-spacing: var(--tracking-label);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
 
-        .skill-group h4 {
-            font-size: 0.82rem;
-            font-weight: 700;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--ink-muted);
-            margin: 0 0 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+.mast-name {
+  font-size: var(--text-display);
+  font-weight: 800;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--lh-tight);
+  color: var(--color-ink);
+  /* riso misregistration — cyan ghost up-left, pink ghost down-right */
+  text-shadow:
+    -0.02em -0.018em 0 var(--ink-cyan),
+     0.022em 0.02em 0 var(--ink-pink);
+}
 
-        .skill-group h4 i { color: var(--green-mid); font-size: 0.9rem; }
+.mast-tagline {
+  max-width: 55ch;
+  margin: var(--space-sm) 0 0;
+  font-size: var(--text-md);
+  color: var(--color-neutral);
+}
 
-        .tag-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.mast-nav ul {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-lg);
+  margin: var(--space-md) 0 0;
+}
 
-        .tag {
-            background: var(--green-faint);
-            color: var(--green-dark);
-            border: 1px solid #bbf7d0;
-            padding: 5px 12px;
-            font-size: 0.82rem;
-            font-weight: 500;
-            border-radius: 6px;
-            letter-spacing: 0.01em;
-            transition: background 0.15s, border-color 0.15s;
-        }
+.mast-nav a {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-neutral);
+  padding-bottom: 2px;
+  border-bottom: var(--rule-hair) solid transparent;
+  transition: color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out);
+}
+.mast-nav a:hover { color: var(--color-accent-ink); border-color: var(--color-accent-ink); }
 
-        .tag:hover { background: var(--green-light); border-color: var(--green-mid); }
+.mast-social {
+  margin: var(--space-md) 0 0;
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-accent-ink);
+  border-bottom: var(--rule-hair) solid var(--color-accent-ink);
+  padding-bottom: 2px;
+}
 
-        /* ── Education ── */
-        .edu-block {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 20px;
-        }
+.mast-rule {
+  border: 0;
+  border-top: var(--rule-hair) solid var(--color-rule);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+  height: 4px;
+  margin: var(--space-lg) 0 0;
+  width: 100%;
+}
 
-        .edu-block h4 {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.2rem;
-            margin: 0 0 4px;
-            color: var(--ink);
-        }
+/* ── Aisle (grouped catalogue section) ── */
+.aisle { padding: var(--space-3xl) 0 0; }
+.aisle:last-of-type { padding-bottom: var(--space-3xl); }
 
-        .edu-degree {
-            font-size: 0.92rem;
-            color: var(--ink-muted);
-            margin: 0 0 14px;
-        }
+.aisle-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-bottom: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  border-bottom: var(--rule-hair) solid var(--color-rule);
+}
 
-        .edu-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
+.aisle-head h2 {
+  font-size: var(--text-xl);
+  letter-spacing: var(--tracking-display);
+}
 
-        .edu-list li {
-            font-size: 0.88rem;
-            color: var(--ink-soft);
-            padding: 5px 0;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+.aisle-count {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  color: var(--color-muted);
+  white-space: nowrap;
+}
 
-        .edu-list li::before {
-            content: '';
-            width: 5px;
-            height: 5px;
-            background: var(--green-mid);
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
+/* ── Catalogue grid + card ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-lg);
+}
 
-        .edu-location {
-            font-size: 0.85rem;
-            color: var(--green-mid);
-            font-weight: 600;
-            background: var(--green-faint);
-            border: 1px solid #bbf7d0;
-            padding: 6px 14px;
-            border-radius: 8px;
-            white-space: nowrap;
-        }
+.grid--wide { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
 
-        /* ── Project Cards ── */
-        .project-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 18px;
-        }
+.card {
+  border: var(--rule-hair) solid var(--color-rule-2);
+  border-radius: var(--radius-card);
+  background: var(--color-paper);
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  transition: transform var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out);
+}
 
-        .card {
-            border: 1px solid var(--border);
-            padding: 28px;
-            border-radius: 12px;
-            transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
-            text-decoration: none;
-            color: inherit;
-            background: var(--white);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            overflow: hidden;
-        }
+.card:hover { transform: translateY(-3px); border-color: var(--color-accent-ink); }
 
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--green), var(--green-mid));
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.3s ease;
-        }
+.card__band {
+  align-self: flex-start;
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--color-on-accent-2);
+  background: var(--color-accent-2);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 32px rgba(0,0,0,0.09);
-            border-color: #bbf7d0;
-        }
+.card h3 {
+  font-size: var(--text-lg);
+  letter-spacing: -0.01em;
+}
 
-        .card:hover::before { transform: scaleX(1); }
+.card p { margin: 0; color: var(--color-neutral); }
 
-        .card-emoji { font-size: 1.8rem; margin-bottom: 14px; }
+.card__link {
+  margin-top: auto;
+  align-self: flex-start;
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: 0.04em;
+  color: var(--color-accent-ink);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  transition: gap var(--dur-short) var(--ease-out);
+}
+.card:hover .card__link { gap: var(--space-xs); }
 
-        .card h3 {
-            font-family: 'DM Serif Display', serif;
-            font-size: 1.15rem;
-            margin: 0 0 10px;
-            color: var(--ink);
-            letter-spacing: -0.01em;
-        }
+.card--about p { font-size: var(--text-md); }
+.card--about strong { color: var(--color-ink); font-weight: 600; }
 
-        .card p {
-            font-size: 0.9rem;
-            color: var(--ink-muted);
-            margin: 0 0 18px;
-            flex: 1;
-            line-height: 1.6;
-        }
+.edu-degree {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: 0.03em;
+  color: var(--color-muted);
+  margin: calc(var(--space-2xs) * -1) 0 0;
+}
 
-        .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+.edu-list li {
+  position: relative;
+  padding-left: var(--space-md);
+  color: var(--color-neutral);
+  font-size: var(--text-sm);
+}
+.edu-list li::before { content: '—'; position: absolute; left: 0; color: var(--color-rule-2); }
 
-        .card-tag {
-            background: var(--bg);
-            color: var(--ink-soft);
-            border: 1px solid var(--border);
-            padding: 3px 10px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            border-radius: 4px;
-        }
+.edu-location { font-family: var(--font-label); font-size: var(--text-xs); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--color-muted); margin-top: var(--space-2xs); }
 
-        .card-cta {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--green-mid);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: gap 0.2s;
-        }
+.tag-group { display: flex; flex-wrap: wrap; gap: var(--space-2xs); }
+.tag {
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  color: var(--color-neutral);
+  border: var(--rule-hair) solid var(--color-rule-2);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+}
 
-        .card:hover .card-cta { gap: 10px; }
+.plate {
+  height: 108px;
+  border-radius: var(--radius-card);
+  position: relative;
+  overflow: hidden;
+  background: var(--color-paper-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.plate span {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 3rem;
+  color: var(--color-ink);
+  text-shadow:
+    -0.03em -0.02em 0 var(--ink-cyan),
+     0.03em 0.02em 0 var(--ink-pink);
+}
+.plate::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(135deg, transparent 0 8px, oklch(58% 0.17 220 / 0.06) 8px 9px);
+}
 
-        /* ── Divider ── */
-        .divider {
-            height: 1px;
-            background: var(--border);
-            margin: 32px 0;
-        }
+.project-tags { display: flex; flex-wrap: wrap; gap: var(--space-2xs); font-family: var(--font-label); font-size: var(--text-xs); color: var(--color-muted); }
+.project-tags span:not(:last-child)::after { content: ' ·'; }
 
-        /* ── Animations ── */
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
+footer {
+  border-top: var(--rule-hair) solid var(--color-rule);
+  position: relative;
+  z-index: 1;
+}
+.foot-dense {
+  padding: var(--space-lg) 0 var(--space-2xl);
+  font-family: var(--font-label);
+  font-size: var(--text-xs);
+  letter-spacing: 0.03em;
+  color: var(--color-muted);
+  max-width: 68ch;
+}
+.foot-dense a { color: var(--color-accent-ink); border-bottom: var(--rule-hair) solid var(--color-accent-ink); }
 
-        .hero-inner > * {
-            animation: fadeUp 0.6s ease both;
-        }
-        .hero-inner > *:nth-child(1) { animation-delay: 0.05s; }
-        .hero-inner > *:nth-child(2) { animation-delay: 0.15s; }
-        .hero-inner > *:nth-child(3) { animation-delay: 0.25s; }
-        .hero-inner > *:nth-child(4) { animation-delay: 0.35s; }
-        .hero-inner > *:nth-child(5) { animation-delay: 0.45s; }
-
-        /* ── Responsive ── */
-        @media (max-width: 700px) {
-            nav { padding: 0 5%; }
-            .hero { padding: 60px 5% 50px; }
-            .section { padding: 32px 24px; }
-            .skills-grid { grid-template-columns: 1fr; }
-            .edu-block { flex-direction: column; }
-            .container { padding: 32px 14px 60px; }
-        }
-    </style>
+@media (max-width: 700px) {
+  :root { --page-gutter: 1.1rem; }
+  .grid, .grid--wide { grid-template-columns: minmax(0, 1fr); }
+  .aisle { padding-top: var(--space-2xl); }
+  .mast-nav ul { gap: var(--space-md) var(--space-lg); }
+}
+</style>
 </head>
 <body>
 
-<nav>
-    <div class="nav-logo">JP Burger</div>
-    <div class="nav-links">
-        <a href="#about">About</a>
-        <a href="#skills">Skills</a>
-        <a href="#education">Education</a>
-        <a href="#projects">Projects</a>
-    </div>
-</nav>
+<header class="nav-mast">
+  
+  <h1 class="mast-name">JP BURGER</h1>
+  <p class="mast-tagline">Building systems, surfacing insight from data, modernizing legacy code.</p>
+  <nav class="mast-nav" aria-label="Primary">
+    <ul>
+      <li><a href="#background">Background</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#projects">Projects</a></li>
+    </ul>
+  </nav>
+  <a class="mast-social" href="https://www.linkedin.com/in/jp-burger-2a71b41a7" target="_blank" rel="noopener">LinkedIn ↗</a>
+  <hr class="mast-rule" aria-hidden="true">
+</header>
 
-<div class="hero">
-    <div class="hero-inner">
-        <p class="hero-eyebrow">Data Analyst · Software Engineer</p>
-        <h1>JP Burger</h1>
-        <p class="hero-subtitle">
-            Professional expert at building/validating complex systems, surfacing insight from data, and modernizing legacy software.
-        </p>
-        <div class="hero-badges">
-            <span class="hero-badge">Data Analytics</span>
-            <span class="hero-badge">Quality Assurance</span>
-            <span class="hero-badge">Software Engineering</span>
-        </div>
-        <div class="hero-social">
-            <a href="https://www.linkedin.com/in/jp-burger-2a71b41a7" target="_blank" title="LinkedIn">
-                <i class="fab fa-linkedin"></i>
-            </a>
-        </div>
+<div class="wrap">
+
+  <section id="background" class="aisle">
+    <div class="aisle-head">
+      <h2>Background</h2>
+      
     </div>
+    <div class="grid grid--wide">
+      <article class="card card--about">
+        <p class="card__band">About</p>
+        
+        <p>I am a data analyst and software engineer with <strong>over 3 years of hands-on experience</strong> in Agile development and a passion for technology. My undergraduate journey was defined by several high-impact co-ops, where I tackled diverse technical challenges to sharpen my toolkit.</p>
+        <p>I am currently seeking a full-time role in <strong>Data Analytics / Quality Assurance / Software Engineering</strong> where I can apply my background in full-stack development, system validation, and data analysis and integrity.</p>
+      </article>
+      <article class="card">
+        <p class="card__band">Education</p>
+        <h3>University of Cincinnati</h3>
+        <p class="edu-degree">B.S. in Computer Science · 2019 – 2024</p>
+        <ul class="edu-list">
+          <li>Cincinnatus Century Scholarship</li>
+          <li>College of Engineering and Applied Science General Scholarship</li>
+          <li>International Fraternity of Phi Gamma Delta</li>
+        </ul>
+        <p class="edu-location">Cincinnati, OH</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="skills" class="aisle">
+    <div class="aisle-head">
+      <h2>Skills</h2>
+      
+    </div>
+    <div class="grid">
+      <article class="card">
+        <p class="card__band">Programming</p>
+        <h3>Languages &amp; Frameworks</h3>
+        <div class="tag-group">
+          <span class="tag">Python</span><span class="tag">Go</span><span class="tag">SQL</span>
+          <span class="tag">TypeScript</span><span class="tag">JavaScript</span><span class="tag">HTML</span>
+          <span class="tag">C++</span><span class="tag">Java</span><span class="tag">Angular</span>
+          <span class="tag">R</span><span class="tag">MATLAB</span>
+        </div>
+      </article>
+      <article class="card">
+        <p class="card__band">Infrastructure</p>
+        <h3>Cloud &amp; DevOps</h3>
+        <div class="tag-group">
+          <span class="tag">AWS</span><span class="tag">GCP</span><span class="tag">Azure</span>
+          <span class="tag">GitHub</span><span class="tag">GitLab</span>
+        </div>
+      </article>
+      <article class="card">
+        <p class="card__band">Data</p>
+        <h3>Databases</h3>
+        <div class="tag-group">
+          <span class="tag">MS SQL Server</span><span class="tag">MySQL</span><span class="tag">BigQuery</span>
+          <span class="tag">MongoDB</span><span class="tag">SQLite</span>
+        </div>
+      </article>
+      <article class="card">
+        <p class="card__band">Office</p>
+        <h3>Productivity</h3>
+        <div class="tag-group">
+          <span class="tag">Excel</span><span class="tag">Power BI</span><span class="tag">PowerPoint</span>
+          <span class="tag">Word</span><span class="tag">SharePoint</span><span class="tag">Sheets</span>
+          <span class="tag">Docs</span><span class="tag">Slides</span><span class="tag">Pages</span>
+          <span class="tag">Numbers</span><span class="tag">Keynote</span>
+        </div>
+      </article>
+      <article class="card">
+        <p class="card__band">Systems</p>
+        <h3>Operating Systems</h3>
+        <div class="tag-group">
+          <span class="tag">Windows</span><span class="tag">macOS</span><span class="tag">Linux</span>
+        </div>
+      </article>
+      <article class="card">
+        <p class="card__band">Tooling</p>
+        <h3>AI Tools</h3>
+        <div class="tag-group">
+          <span class="tag">Claude Code</span><span class="tag">Cursor</span><span class="tag">Copilot</span>
+          <span class="tag">Gemini</span><span class="tag">Codex</span>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="projects" class="aisle">
+    <div class="aisle-head">
+      <h2>Projects</h2>
+      
+    </div>
+    <div class="grid grid--wide">
+      <a class="card" href="climate-dashboard.html">
+        <div class="plate"><span>Atmos</span></div>
+        <p class="card__band">01</p>
+        <h3>Atmosphere</h3>
+        <p>Interactive dashboard for visualizing global climate data and trends.</p>
+        <div class="project-tags"><span>HTML</span><span>JavaScript</span><span>API</span></div>
+        <span class="card__link">View project →</span>
+      </a>
+      <a class="card" href="indycar/HTML/indycar-data-index.html">
+        <div class="plate"><span>INDY</span></div>
+        <p class="card__band">02</p>
+        <h3>INDYCAR Data Analysis</h3>
+        <p>Interactive tool for analyzing INDYCAR driver lap times throughout a race.</p>
+        <div class="project-tags"><span>HTML</span><span>JavaScript</span><span>D3</span><span>Python</span></div>
+        <span class="card__link">View project →</span>
+      </a>
+      <a class="card" href="amtrak-explorer.html">
+        <div class="plate"><span>AmEx</span></div>
+        <p class="card__band">03</p>
+        <h3>Amtrak Explorer</h3>
+        <p>Interactive geospatial data visualization of Amtrak routes across North America.</p>
+        <div class="project-tags"><span>HTML</span><span>JavaScript</span><span>JSON</span></div>
+        <span class="card__link">View project →</span>
+      </a>
+    </div>
+  </section>
+
 </div>
 
-<div class="container">
-
-    <section id="about" class="section">
-        <p class="section-label">Background</p>
-        <h2>About Me</h2>
-        <div class="about-body">
-            <p>I am a data analyst and software engineer with <strong>over 3 years of hands-on experience</strong> in Agile development and a passion for technology. My undergraduate journey was defined by several high-impact co-ops, where I tackled diverse technical challenges to sharpen my toolkit.</p>
-            <p>I am currently seeking a full-time role in <strong>Data Analytics / Quality Assurance / Software Engineering</strong> where I can apply my background in full-stack development, system validation, and data analysis and integrity.</p>
-        </div>
-    </section>
-
-    <section id="skills" class="section">
-        <p class="section-label">Capabilities</p>
-        <h2>Technical Skills</h2>
-        <div class="skills-grid">
-            <div class="skill-group">
-                <h4><i class="fas fa-code"></i> Languages &amp; Frameworks</h4>
-                <div class="tag-group">
-                    <span class="tag">Python</span>
-                    <span class="tag">Go</span>
-                    <span class="tag">SQL</span>
-                    <span class="tag">TypeScript</span>
-                    <span class="tag">JavaScript</span>
-                    <span class="tag">HTML</span>
-                    <span class="tag">C++</span>
-                    <span class="tag">Java</span>
-                    <span class="tag">Angular</span>
-                    <span class="tag">R</span>
-                    <span class="tag">MATLAB</span>
-                </div>
-            </div>
-            <div class="skill-group">
-                <h4><i class="fas fa-cloud"></i> Cloud &amp; DevOps</h4>
-                <div class="tag-group">
-                    <span class="tag">AWS</span>
-                    <span class="tag">GCP</span>
-                    <span class="tag">Azure</span>
-                    <span class="tag">GitHub</span>
-                    <span class="tag">GitLab</span>
-                </div>
-            </div>
-            <div class="skill-group">
-                <h4><i class="fas fa-database"></i> Databases</h4>
-                <div class="tag-group">
-                    <span class="tag">MS SQL Server</span>
-                    <span class="tag">MySQL</span>
-                    <span class="tag">BigQuery</span>
-                    <span class="tag">MongoDB</span>
-                    <span class="tag">SQLite</span>
-                </div>
-            </div>
-            <div class="skill-group">
-                <h4><i class="fas fa-tools"></i> Productivity</h4>
-                <div class="tag-group">
-                    <span class="tag">Excel</span>
-                    <span class="tag">Power BI</span>
-                    <span class="tag">PowerPoint</span>
-                    <span class="tag">Word</span>
-                    <span class="tag">SharePoint</span>
-                </div>
-            </div>
-            <div class="skill-group">
-                <h4><i class="fa-solid fa-desktop"></i> Operating Systems</h4>
-                <div class="tag-group">
-                    <span class="tag">Windows</span>
-                    <span class="tag">macOS</span>
-                    <span class="tag">Linux</span>
-                </div>
-            </div>
-            <div class="skill-group">
-                <h4><i class="fa-solid fa-robot"></i></i> AI Tools</h4>
-                <div class="tag-group">
-                    <span class="tag">Claude Code</span>
-                    <span class="tag">Cursor</span>
-                    <span class="tag">Microsoft Copilot</span>
-                    <span class="tag">Google Gemini</span>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section id="education" class="section">
-        <p class="section-label">Academic</p>
-        <h2>Education</h2>
-        <div class="edu-block">
-            <div>
-                <h4>University of Cincinnati</h4>
-                <p class="edu-degree">B.S. in Computer Science &nbsp;·&nbsp; 2019 – 2024</p>
-                <ul class="edu-list">
-                    <li>Cincinnatus Century Scholarship</li>
-                    <li>College of Engineering and Applied Science General Scholarship</li>
-                    <li>International Fraternity of Phi Gamma Delta</li>
-                </ul>
-            </div>
-            <div class="edu-location">Cincinnati, OH</div>
-        </div>
-    </section>
-
-    <section id="projects" class="section">
-        <p class="section-label">Work</p>
-        <h2>My Projects</h2>
-        <div class="project-grid">
-            <a href="climate-dashboard.html" class="card">
-                <div class="card-emoji">⛅</div>
-                <h3>Atmosphere</h3>
-                <p>Interactive dashboard for visualizing global climate data and trends.</p>
-                <div class="card-tags">
-                    <span class="card-tag">HTML</span>
-                    <span class="card-tag">JavaScript</span>
-                    <span class="card-tag">API</span>
-                </div>
-                <span class="card-cta">View Project <i class="fas fa-arrow-right" style="font-size:0.75rem;"></i></span>
-            </a>
-            
-            <a href="herta-f2.html" class="card">
-                <div class="card-emoji">🏎</div>
-                <h3>Herta F2 Tracker</h3>
-                <p>Breakdown of Colton Herta's 2026 Formula 2 season stats.</p>
-                <div class="card-tags">
-                    <span class="card-tag">HTML</span>
-                    <span class="card-tag">JavaScript</span>
-                    <span class="card-tag">JSON</span>
-                </div>
-                <span class="card-cta">View Project <i class="fas fa-arrow-right" style="font-size:0.75rem;"></i></span>
-            </a>
-
-            <a href="amtrak-explorer.html" class="card">
-                <div class="card-emoji">🚄</div>
-                <h3>Amtrak Explorer</h3>
-                <p>Interactive geospatial data visualization of Amtrak routes across North America.</p>
-                <div class="card-tags">
-                    <span class="card-tag">HTML</span>
-                    <span class="card-tag">JavaScript</span>
-                    <span class="card-tag">JSON</span>
-                </div>
-                <span class="card-cta">View Project <i class="fas fa-arrow-right" style="font-size:0.75rem;"></i></span>
-            </a>
-
-        </div>
-    </section>
-
-</div>
+<footer>
+  <div class="wrap">
+    <p class="foot-dense">JP Burger — Data Analyst / Software Engineer </p>
+  </div>
+</footer>
 
 </body>
 </html>

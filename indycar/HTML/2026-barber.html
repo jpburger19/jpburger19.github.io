@@ -1,0 +1,2161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>INDYCAR Data Analysis</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px 0 60px;
+            font-family: sans-serif;
+        }
+        .line {
+            fill: none;
+            stroke-width: 3;
+        }
+        .dot {
+            stroke: #fff;
+            stroke-width: 1.5;
+            cursor: pointer;
+        }
+        .dot:hover {
+            r: 7;
+        }
+        .axis-label {
+            font-family: sans-serif;
+            font-size: 12px;
+            fill: #000000;
+        }
+        .grid line {
+            stroke: #e5e7eb;
+            stroke-opacity: 0.7;
+            shape-rendering: crispEdges;
+        }
+        .grid path {
+            stroke-width: 0;
+        }
+        .legend-text {
+            font-family: sans-serif;
+            font-size: 12px;
+            fill: #374151;
+        }
+        .legend-row {
+            cursor: pointer;
+        }
+        .legend-btn-bg {
+            fill: #ffffff;
+            stroke: #d1d5db;
+            stroke-width: 1;
+        }
+        .legend-row:hover .legend-btn-bg {
+            fill: #f3f4f6;
+            stroke: #9ca3af;
+        }
+        .legend-row.hidden .legend-btn-bg {
+            fill: #f9fafb;
+        }
+        .legend-row.hidden .legend-text {
+            fill: #9ca3af;
+            text-decoration: line-through;
+        }
+        .legend-row.hidden .legend-swatch {
+            stroke-opacity: 0.25;
+        }
+        .legend-row:hover .legend-swatch {
+            stroke-width: 5;
+        }
+        .legend-color-input {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            border: none;
+            cursor: pointer;
+            background: none;
+        }
+    </style>
+</head>
+<body>
+<h2>2026 Children's of Alabama Indy Grand Prix</h2>
+<h2 style="text-decoration: underline;">Smoothed Race Pace</h2>
+<div id="chart"></div>
+
+<h2 style="text-decoration: underline;">Global Race Pace (Sorted by Mean Lap Time)</h2>
+<div id="boxplot-chart" style="cursor: crosshair"></div>
+
+<script>
+    // Data Setup
+    const rawData = [
+        { car: 2, lap: 1, time: 74.3788 }, { car: 2, lap: 2, time: 70.3835 },
+        { car: 2, lap: 3, time: 69.8164 }, { car: 2, lap: 4, time: 69.4650 },
+        { car: 2, lap: 5, time: 69.5077 }, { car: 2, lap: 6, time: 69.2556 },
+        { car: 2, lap: 7, time: 69.3851 }, { car: 2, lap: 8, time: 69.4154 },
+        { car: 2, lap: 9, time: 69.4984 }, { car: 2, lap: 10, time: 69.3791 },
+        { car: 2, lap: 11, time: 69.5135 }, { car: 2, lap: 12, time: 69.7111 },
+        { car: 2, lap: 13, time: 69.9204 }, { car: 2, lap: 14, time: 69.8573 },
+        { car: 2, lap: 15, time: 88.9238 }, { car: 2, lap: 16, time: 76.6591 },
+        { car: 2, lap: 17, time: 69.5676 }, { car: 2, lap: 18, time: 69.6946 },
+        { car: 2, lap: 19, time: 69.6615 }, { car: 2, lap: 20, time: 69.5263 },
+        { car: 2, lap: 21, time: 69.7177 }, { car: 2, lap: 22, time: 69.2240 },
+        { car: 2, lap: 23, time: 69.3692 }, { car: 2, lap: 24, time: 69.7693 },
+        { car: 2, lap: 25, time: 69.7571 }, { car: 2, lap: 26, time: 69.7238 },
+        { car: 2, lap: 27, time: 69.7945 }, { car: 2, lap: 28, time: 70.0824 },
+        { car: 2, lap: 29, time: 69.8929 }, { car: 2, lap: 30, time: 69.9862 },
+        { car: 2, lap: 31, time: 70.0668 }, { car: 2, lap: 32, time: 69.9874 },
+        { car: 2, lap: 33, time: 70.2814 }, { car: 2, lap: 34, time: 70.4415 },
+        { car: 2, lap: 35, time: 70.4742 }, { car: 2, lap: 36, time: 70.7910 },
+        { car: 2, lap: 37, time: 71.1124 }, { car: 2, lap: 38, time: 71.2413 },
+        { car: 2, lap: 39, time: 91.8781 }, { car: 2, lap: 40, time: 78.4109 },
+        { car: 2, lap: 41, time: 70.3586 }, { car: 2, lap: 42, time: 69.9825 },
+        { car: 2, lap: 43, time: 69.5741 }, { car: 2, lap: 44, time: 70.5741 },
+        { car: 2, lap: 45, time: 71.1563 }, { car: 2, lap: 46, time: 70.1426 },
+        { car: 2, lap: 47, time: 71.1439 }, { car: 2, lap: 48, time: 70.8215 },
+        { car: 2, lap: 49, time: 70.5398 }, { car: 2, lap: 50, time: 70.5271 },
+        { car: 2, lap: 51, time: 70.3786 }, { car: 2, lap: 52, time: 70.3769 },
+        { car: 2, lap: 53, time: 70.2905 }, { car: 2, lap: 54, time: 70.2001 },
+        { car: 2, lap: 55, time: 70.5036 }, { car: 2, lap: 56, time: 70.2858 },
+        { car: 2, lap: 57, time: 69.9628 }, { car: 2, lap: 58, time: 70.2764 },
+        { car: 2, lap: 59, time: 70.4092 }, { car: 2, lap: 60, time: 70.3880 },
+        { car: 2, lap: 61, time: 70.0607 }, { car: 2, lap: 62, time: 70.1931 },
+        { car: 2, lap: 63, time: 70.1244 }, { car: 2, lap: 64, time: 91.1914 },
+        { car: 2, lap: 65, time: 78.8269 }, { car: 2, lap: 66, time: 70.9256 },
+        { car: 2, lap: 67, time: 70.8564 }, { car: 2, lap: 68, time: 71.0934 },
+        { car: 2, lap: 69, time: 70.6439 }, { car: 2, lap: 70, time: 70.6863 },
+        { car: 2, lap: 71, time: 70.5827 }, { car: 2, lap: 72, time: 70.8758 },
+        { car: 2, lap: 73, time: 70.4085 }, { car: 2, lap: 74, time: 70.4198 },
+        { car: 2, lap: 75, time: 70.3957 }, { car: 2, lap: 76, time: 70.1948 },
+        { car: 2, lap: 77, time: 70.5570 }, { car: 2, lap: 78, time: 70.3737 },
+        { car: 2, lap: 79, time: 70.3064 }, { car: 2, lap: 80, time: 70.7032 },
+        { car: 2, lap: 81, time: 70.6982 }, { car: 2, lap: 82, time: 70.6774 },
+        { car: 2, lap: 83, time: 70.6890 }, { car: 2, lap: 84, time: 70.6804 },
+        { car: 2, lap: 85, time: 70.6610 }, { car: 2, lap: 86, time: 70.6441 },
+        { car: 2, lap: 87, time: 70.3344 }, { car: 2, lap: 88, time: 70.5799 },
+        { car: 2, lap: 89, time: 70.4847 }, { car: 2, lap: 90, time: 70.7091 },
+        { car: 2, lap: 91, time: 70.7091 }, { car: 3, lap: 1, time: 75.0361 },
+        { car: 3, lap: 2, time: 70.9628 }, { car: 3, lap: 3, time: 70.3511 },
+        { car: 3, lap: 4, time: 69.5687 }, { car: 3, lap: 5, time: 70.0308 },
+        { car: 3, lap: 6, time: 69.9143 }, { car: 3, lap: 7, time: 69.5884 },
+        { car: 3, lap: 8, time: 69.4491 }, { car: 3, lap: 9, time: 69.7510 },
+        { car: 3, lap: 10, time: 69.7202 }, { car: 3, lap: 11, time: 69.9669 },
+        { car: 3, lap: 12, time: 69.9026 }, { car: 3, lap: 13, time: 69.7965 },
+        { car: 3, lap: 14, time: 69.4480 }, { car: 3, lap: 15, time: 69.6827 },
+        { car: 3, lap: 16, time: 69.9111 }, { car: 3, lap: 17, time: 89.8110 },
+        { car: 3, lap: 18, time: 77.0516 }, { car: 3, lap: 19, time: 69.8926 },
+        { car: 3, lap: 20, time: 69.6453 }, { car: 3, lap: 21, time: 69.5005 },
+        { car: 3, lap: 22, time: 69.4698 }, { car: 3, lap: 23, time: 69.4364 },
+        { car: 3, lap: 24, time: 71.1550 }, { car: 3, lap: 25, time: 69.9028 },
+        { car: 3, lap: 26, time: 70.1117 }, { car: 3, lap: 27, time: 69.7328 },
+        { car: 3, lap: 28, time: 70.0356 }, { car: 3, lap: 29, time: 70.0929 },
+        { car: 3, lap: 30, time: 69.8084 }, { car: 3, lap: 31, time: 69.9001 },
+        { car: 3, lap: 32, time: 70.0602 }, { car: 3, lap: 33, time: 69.7841 },
+        { car: 3, lap: 34, time: 69.9045 }, { car: 3, lap: 35, time: 70.1084 },
+        { car: 3, lap: 36, time: 70.3040 }, { car: 3, lap: 37, time: 69.9767 },
+        { car: 3, lap: 38, time: 70.1357 }, { car: 3, lap: 39, time: 70.3936 },
+        { car: 3, lap: 40, time: 70.2561 }, { car: 3, lap: 41, time: 70.0096 },
+        { car: 3, lap: 42, time: 90.4671 }, { car: 3, lap: 43, time: 78.3595 },
+        { car: 3, lap: 44, time: 70.0945 }, { car: 3, lap: 45, time: 70.1096 },
+        { car: 3, lap: 46, time: 70.1999 }, { car: 3, lap: 47, time: 70.2155 },
+        { car: 3, lap: 48, time: 70.5029 }, { car: 3, lap: 49, time: 70.7883 },
+        { car: 3, lap: 50, time: 70.6058 }, { car: 3, lap: 51, time: 70.3830 },
+        { car: 3, lap: 52, time: 70.2564 }, { car: 3, lap: 53, time: 70.5045 },
+        { car: 3, lap: 54, time: 70.3628 }, { car: 3, lap: 55, time: 70.3139 },
+        { car: 3, lap: 56, time: 70.3210 }, { car: 3, lap: 57, time: 70.0440 },
+        { car: 3, lap: 58, time: 70.3932 }, { car: 3, lap: 59, time: 70.4132 },
+        { car: 3, lap: 60, time: 70.6751 }, { car: 3, lap: 61, time: 70.3879 },
+        { car: 3, lap: 62, time: 70.6608 }, { car: 3, lap: 63, time: 70.5259 },
+        { car: 3, lap: 64, time: 70.5617 }, { car: 3, lap: 65, time: 70.5398 },
+        { car: 3, lap: 66, time: 70.9305 }, { car: 3, lap: 67, time: 92.6602 },
+        { car: 3, lap: 68, time: 79.5794 }, { car: 3, lap: 69, time: 71.4405 },
+        { car: 3, lap: 70, time: 71.2435 }, { car: 3, lap: 71, time: 70.6999 },
+        { car: 3, lap: 72, time: 70.4834 }, { car: 3, lap: 73, time: 71.2404 },
+        { car: 3, lap: 74, time: 70.5080 }, { car: 3, lap: 75, time: 70.3539 },
+        { car: 3, lap: 76, time: 70.4340 }, { car: 3, lap: 77, time: 70.5461 },
+        { car: 3, lap: 78, time: 70.3533 }, { car: 3, lap: 79, time: 70.4118 },
+        { car: 3, lap: 80, time: 70.5186 }, { car: 3, lap: 81, time: 70.4434 },
+        { car: 3, lap: 82, time: 70.4450 }, { car: 3, lap: 83, time: 70.5902 },
+        { car: 3, lap: 84, time: 70.6314 }, { car: 3, lap: 85, time: 70.7948 },
+        { car: 3, lap: 86, time: 70.6115 }, { car: 3, lap: 87, time: 70.6189 },
+        { car: 3, lap: 88, time: 71.7553 }, { car: 3, lap: 89, time: 70.8825 },
+        { car: 3, lap: 90, time: 71.4532 }, { car: 3, lap: 91, time: 71.4532 },
+        { car: 4, lap: 1, time: 76.8481 }, { car: 4, lap: 2, time: 71.4762 },
+        { car: 4, lap: 3, time: 70.6927 }, { car: 4, lap: 4, time: 70.4735 },
+        { car: 4, lap: 5, time: 70.4544 }, { car: 4, lap: 6, time: 70.6038 },
+        { car: 4, lap: 7, time: 70.3288 }, { car: 4, lap: 8, time: 70.2810 },
+        { car: 4, lap: 9, time: 70.5556 }, { car: 4, lap: 10, time: 70.4294 },
+        { car: 4, lap: 11, time: 70.4076 }, { car: 4, lap: 12, time: 70.3325 },
+        { car: 4, lap: 13, time: 69.9415 }, { car: 4, lap: 14, time: 69.7029 },
+        { car: 4, lap: 15, time: 69.6970 }, { car: 4, lap: 16, time: 69.9025 },
+        { car: 4, lap: 17, time: 69.5262 }, { car: 4, lap: 18, time: 69.5597 },
+        { car: 4, lap: 19, time: 69.4870 }, { car: 4, lap: 20, time: 69.6124 },
+        { car: 4, lap: 21, time: 69.4146 }, { car: 4, lap: 22, time: 69.7786 },
+        { car: 4, lap: 23, time: 93.5620 }, { car: 4, lap: 24, time: 79.5275 },
+        { car: 4, lap: 25, time: 72.7664 }, { car: 4, lap: 26, time: 70.4523 },
+        { car: 4, lap: 27, time: 69.9428 }, { car: 4, lap: 28, time: 70.1737 },
+        { car: 4, lap: 29, time: 70.3857 }, { car: 4, lap: 30, time: 69.7991 },
+        { car: 4, lap: 31, time: 69.7571 }, { car: 4, lap: 32, time: 69.8777 },
+        { car: 4, lap: 33, time: 69.9607 }, { car: 4, lap: 34, time: 70.0360 },
+        { car: 4, lap: 35, time: 70.3387 }, { car: 4, lap: 36, time: 70.1350 },
+        { car: 4, lap: 37, time: 70.2002 }, { car: 4, lap: 38, time: 70.2215 },
+        { car: 4, lap: 39, time: 70.3434 }, { car: 4, lap: 40, time: 70.1486 },
+        { car: 4, lap: 41, time: 69.9955 }, { car: 4, lap: 42, time: 69.9733 },
+        { car: 4, lap: 43, time: 70.3692 }, { car: 4, lap: 44, time: 70.4440 },
+        { car: 4, lap: 45, time: 70.3252 }, { car: 4, lap: 46, time: 70.2194 },
+        { car: 4, lap: 47, time: 69.9753 }, { car: 4, lap: 48, time: 91.9610 },
+        { car: 4, lap: 49, time: 78.4853 }, { car: 4, lap: 50, time: 70.4836 },
+        { car: 4, lap: 51, time: 69.8413 }, { car: 4, lap: 52, time: 70.0865 },
+        { car: 4, lap: 53, time: 70.1502 }, { car: 4, lap: 54, time: 69.8770 },
+        { car: 4, lap: 55, time: 70.0873 }, { car: 4, lap: 56, time: 69.8284 },
+        { car: 4, lap: 57, time: 69.7705 }, { car: 4, lap: 58, time: 69.7336 },
+        { car: 4, lap: 59, time: 69.9188 }, { car: 4, lap: 60, time: 70.1668 },
+        { car: 4, lap: 61, time: 70.2542 }, { car: 4, lap: 62, time: 70.3263 },
+        { car: 4, lap: 63, time: 70.4081 }, { car: 4, lap: 64, time: 70.6810 },
+        { car: 4, lap: 65, time: 70.6446 }, { car: 4, lap: 66, time: 90.9982 },
+        { car: 4, lap: 67, time: 78.9706 }, { car: 4, lap: 68, time: 71.0226 },
+        { car: 4, lap: 69, time: 70.5733 }, { car: 4, lap: 70, time: 70.4379 },
+        { car: 4, lap: 71, time: 70.2272 }, { car: 4, lap: 72, time: 70.2182 },
+        { car: 4, lap: 73, time: 70.1427 }, { car: 4, lap: 74, time: 70.0661 },
+        { car: 4, lap: 75, time: 70.1251 }, { car: 4, lap: 76, time: 70.0860 },
+        { car: 4, lap: 77, time: 70.4976 }, { car: 4, lap: 78, time: 70.2670 },
+        { car: 4, lap: 79, time: 70.5735 }, { car: 4, lap: 80, time: 70.6548 },
+        { car: 4, lap: 81, time: 70.4801 }, { car: 4, lap: 82, time: 70.5526 },
+        { car: 4, lap: 83, time: 70.6952 }, { car: 4, lap: 84, time: 70.4560 },
+        { car: 4, lap: 85, time: 70.6790 }, { car: 4, lap: 86, time: 70.8761 },
+        { car: 4, lap: 87, time: 70.5554 }, { car: 4, lap: 88, time: 70.6619 },
+        { car: 4, lap: 89, time: 70.4054 }, { car: 4, lap: 90, time: 70.9123 },
+        { car: 4, lap: 91, time: 70.9123 }, { car: 5, lap: 1, time: 76.0074 },
+        { car: 5, lap: 2, time: 70.6897 }, { car: 5, lap: 3, time: 70.5891 },
+        { car: 5, lap: 4, time: 70.1881 }, { car: 5, lap: 5, time: 70.3665 },
+        { car: 5, lap: 6, time: 70.2240 }, { car: 5, lap: 7, time: 70.0319 },
+        { car: 5, lap: 8, time: 69.9304 }, { car: 5, lap: 9, time: 69.8681 },
+        { car: 5, lap: 10, time: 69.9058 }, { car: 5, lap: 11, time: 69.6305 },
+        { car: 5, lap: 12, time: 70.0970 }, { car: 5, lap: 13, time: 69.9792 },
+        { car: 5, lap: 14, time: 80.6522 }, { car: 5, lap: 15, time: 85.8732 },
+        { car: 5, lap: 16, time: 69.0291 }, { car: 5, lap: 17, time: 69.2522 },
+        { car: 5, lap: 18, time: 68.9005 }, { car: 5, lap: 19, time: 69.6279 },
+        { car: 5, lap: 20, time: 69.6749 }, { car: 5, lap: 21, time: 69.6804 },
+        { car: 5, lap: 22, time: 69.5827 }, { car: 5, lap: 23, time: 69.6543 },
+        { car: 5, lap: 24, time: 70.7669 }, { car: 5, lap: 25, time: 70.3094 },
+        { car: 5, lap: 26, time: 70.3152 }, { car: 5, lap: 27, time: 69.9377 },
+        { car: 5, lap: 28, time: 70.2310 }, { car: 5, lap: 29, time: 69.8382 },
+        { car: 5, lap: 30, time: 70.0316 }, { car: 5, lap: 31, time: 70.0656 },
+        { car: 5, lap: 32, time: 70.0382 }, { car: 5, lap: 33, time: 69.9464 },
+        { car: 5, lap: 34, time: 70.0925 }, { car: 5, lap: 35, time: 70.2233 },
+        { car: 5, lap: 36, time: 70.2786 }, { car: 5, lap: 37, time: 69.9096 },
+        { car: 5, lap: 38, time: 70.1517 }, { car: 5, lap: 39, time: 70.3198 },
+        { car: 5, lap: 40, time: 80.9861 }, { car: 5, lap: 41, time: 88.9192 },
+        { car: 5, lap: 42, time: 69.4157 }, { car: 5, lap: 43, time: 69.5398 },
+        { car: 5, lap: 44, time: 70.0285 }, { car: 5, lap: 45, time: 69.8682 },
+        { car: 5, lap: 46, time: 69.9721 }, { car: 5, lap: 47, time: 69.9960 },
+        { car: 5, lap: 48, time: 70.1917 }, { car: 5, lap: 49, time: 71.3088 },
+        { car: 5, lap: 50, time: 71.0360 }, { car: 5, lap: 51, time: 70.4001 },
+        { car: 5, lap: 52, time: 70.2174 }, { car: 5, lap: 53, time: 70.2201 },
+        { car: 5, lap: 54, time: 70.3559 }, { car: 5, lap: 55, time: 70.2461 },
+        { car: 5, lap: 56, time: 70.4385 }, { car: 5, lap: 57, time: 70.2477 },
+        { car: 5, lap: 58, time: 70.4493 }, { car: 5, lap: 59, time: 70.3725 },
+        { car: 5, lap: 60, time: 70.4509 }, { car: 5, lap: 61, time: 70.5684 },
+        { car: 5, lap: 62, time: 70.7301 }, { car: 5, lap: 63, time: 70.6711 },
+        { car: 5, lap: 64, time: 70.8161 }, { car: 5, lap: 65, time: 81.2236 },
+        { car: 5, lap: 66, time: 88.5556 }, { car: 5, lap: 67, time: 72.2189 },
+        { car: 5, lap: 68, time: 70.8116 }, { car: 5, lap: 69, time: 70.7502 },
+        { car: 5, lap: 70, time: 70.7986 }, { car: 5, lap: 71, time: 71.6661 },
+        { car: 5, lap: 72, time: 70.5411 }, { car: 5, lap: 73, time: 70.6380 },
+        { car: 5, lap: 74, time: 70.4086 }, { car: 5, lap: 75, time: 70.4729 },
+        { car: 5, lap: 76, time: 70.4733 }, { car: 5, lap: 77, time: 70.6166 },
+        { car: 5, lap: 78, time: 70.4919 }, { car: 5, lap: 79, time: 70.5360 },
+        { car: 5, lap: 80, time: 70.5293 }, { car: 5, lap: 81, time: 70.4987 },
+        { car: 5, lap: 82, time: 70.7528 }, { car: 5, lap: 83, time: 70.5814 },
+        { car: 5, lap: 84, time: 70.5741 }, { car: 5, lap: 85, time: 70.8367 },
+        { car: 5, lap: 86, time: 70.6623 }, { car: 5, lap: 87, time: 70.7364 },
+        { car: 5, lap: 88, time: 71.0366 }, { car: 5, lap: 89, time: 70.8705 },
+        { car: 5, lap: 90, time: 71.3013 }, { car: 5, lap: 91, time: 71.3013 },
+        { car: 6, lap: 1, time: 75.1183 }, { car: 6, lap: 2, time: 71.0229 },
+        { car: 6, lap: 3, time: 70.4824 }, { car: 6, lap: 4, time: 70.1500 },
+        { car: 6, lap: 5, time: 70.2049 }, { car: 6, lap: 6, time: 70.0842 },
+        { car: 6, lap: 7, time: 70.0710 }, { car: 6, lap: 8, time: 70.0504 },
+        { car: 6, lap: 9, time: 69.7542 }, { car: 6, lap: 10, time: 69.9250 },
+        { car: 6, lap: 11, time: 69.7920 }, { car: 6, lap: 12, time: 70.0292 },
+        { car: 6, lap: 13, time: 69.9961 }, { car: 6, lap: 14, time: 69.9938 },
+        { car: 6, lap: 15, time: 69.2752 }, { car: 6, lap: 16, time: 69.6706 },
+        { car: 6, lap: 17, time: 69.6567 }, { car: 6, lap: 18, time: 90.7780 },
+        { car: 6, lap: 19, time: 78.4025 }, { car: 6, lap: 20, time: 69.9661 },
+        { car: 6, lap: 21, time: 69.5305 }, { car: 6, lap: 22, time: 69.3487 },
+        { car: 6, lap: 23, time: 69.6331 }, { car: 6, lap: 24, time: 69.4733 },
+        { car: 6, lap: 25, time: 70.1802 }, { car: 6, lap: 26, time: 70.4071 },
+        { car: 6, lap: 27, time: 70.4847 }, { car: 6, lap: 28, time: 70.5080 },
+        { car: 6, lap: 29, time: 70.5116 }, { car: 6, lap: 30, time: 70.1796 },
+        { car: 6, lap: 31, time: 70.0735 }, { car: 6, lap: 32, time: 70.0664 },
+        { car: 6, lap: 33, time: 70.0405 }, { car: 6, lap: 34, time: 70.0509 },
+        { car: 6, lap: 35, time: 70.1950 }, { car: 6, lap: 36, time: 69.9845 },
+        { car: 6, lap: 37, time: 69.7911 }, { car: 6, lap: 38, time: 69.9042 },
+        { car: 6, lap: 39, time: 69.7854 }, { car: 6, lap: 40, time: 69.8895 },
+        { car: 6, lap: 41, time: 69.7166 }, { car: 6, lap: 42, time: 90.1082 },
+        { car: 6, lap: 43, time: 78.7226 }, { car: 6, lap: 44, time: 70.3612 },
+        { car: 6, lap: 45, time: 70.1069 }, { car: 6, lap: 46, time: 70.0407 },
+        { car: 6, lap: 47, time: 70.2368 }, { car: 6, lap: 48, time: 70.0483 },
+        { car: 6, lap: 49, time: 71.4123 }, { car: 6, lap: 50, time: 70.8627 },
+        { car: 6, lap: 51, time: 70.4334 }, { car: 6, lap: 52, time: 70.1232 },
+        { car: 6, lap: 53, time: 70.1604 }, { car: 6, lap: 54, time: 70.0766 },
+        { car: 6, lap: 55, time: 70.3432 }, { car: 6, lap: 56, time: 70.1844 },
+        { car: 6, lap: 57, time: 70.2254 }, { car: 6, lap: 58, time: 70.3158 },
+        { car: 6, lap: 59, time: 73.7187 }, { car: 6, lap: 60, time: 70.2648 },
+        { car: 6, lap: 61, time: 70.2715 }, { car: 6, lap: 62, time: 70.5183 },
+        { car: 6, lap: 63, time: 70.2570 }, { car: 6, lap: 64, time: 70.4420 },
+        { car: 6, lap: 65, time: 92.8839 }, { car: 6, lap: 66, time: 77.9758 },
+        { car: 6, lap: 67, time: 70.4943 }, { car: 6, lap: 68, time: 69.9393 },
+        { car: 6, lap: 69, time: 70.6749 }, { car: 6, lap: 70, time: 70.7853 },
+        { car: 6, lap: 71, time: 70.4182 }, { car: 6, lap: 72, time: 70.6285 },
+        { car: 6, lap: 73, time: 70.0865 }, { car: 6, lap: 74, time: 70.4210 },
+        { car: 6, lap: 75, time: 70.5682 }, { car: 6, lap: 76, time: 70.6165 },
+        { car: 6, lap: 77, time: 70.8841 }, { car: 6, lap: 78, time: 70.3607 },
+        { car: 6, lap: 79, time: 70.7275 }, { car: 6, lap: 80, time: 70.6610 },
+        { car: 6, lap: 81, time: 70.5021 }, { car: 6, lap: 82, time: 70.6070 },
+        { car: 6, lap: 83, time: 70.7507 }, { car: 6, lap: 84, time: 70.8122 },
+        { car: 6, lap: 85, time: 71.1229 }, { car: 6, lap: 86, time: 70.6360 },
+        { car: 6, lap: 87, time: 70.7756 }, { car: 6, lap: 88, time: 70.9243 },
+        { car: 6, lap: 89, time: 70.5212 }, { car: 6, lap: 90, time: 70.7812 },
+        { car: 6, lap: 91, time: 70.7812 }, { car: 7, lap: 1, time: 74.1589 },
+        { car: 7, lap: 2, time: 69.9259 }, { car: 7, lap: 3, time: 69.4761 },
+        { car: 7, lap: 4, time: 69.2112 }, { car: 7, lap: 5, time: 68.9639 },
+        { car: 7, lap: 6, time: 69.1480 }, { car: 7, lap: 7, time: 69.5111 },
+        { car: 7, lap: 8, time: 69.3294 }, { car: 7, lap: 9, time: 69.2911 },
+        { car: 7, lap: 10, time: 69.1481 }, { car: 7, lap: 11, time: 69.2714 },
+        { car: 7, lap: 12, time: 69.4879 }, { car: 7, lap: 13, time: 69.3928 },
+        { car: 7, lap: 14, time: 69.4760 }, { car: 7, lap: 15, time: 69.0774 },
+        { car: 7, lap: 16, time: 69.2614 }, { car: 7, lap: 17, time: 69.3054 },
+        { car: 7, lap: 18, time: 69.0133 }, { car: 7, lap: 19, time: 68.6127 },
+        { car: 7, lap: 20, time: 68.8432 }, { car: 7, lap: 21, time: 69.0558 },
+        { car: 7, lap: 22, time: 69.0492 }, { car: 7, lap: 23, time: 69.5764 },
+        { car: 7, lap: 24, time: 69.6106 }, { car: 7, lap: 25, time: 90.5122 },
+        { car: 7, lap: 26, time: 77.6193 }, { car: 7, lap: 27, time: 69.3501 },
+        { car: 7, lap: 28, time: 69.1635 }, { car: 7, lap: 29, time: 69.0073 },
+        { car: 7, lap: 30, time: 69.2333 }, { car: 7, lap: 31, time: 69.1615 },
+        { car: 7, lap: 32, time: 69.2643 }, { car: 7, lap: 33, time: 69.4382 },
+        { car: 7, lap: 34, time: 69.4417 }, { car: 7, lap: 35, time: 69.7142 },
+        { car: 7, lap: 36, time: 69.7900 }, { car: 7, lap: 37, time: 69.6641 },
+        { car: 7, lap: 38, time: 69.3342 }, { car: 7, lap: 39, time: 69.4601 },
+        { car: 7, lap: 40, time: 69.3364 }, { car: 7, lap: 41, time: 69.5364 },
+        { car: 7, lap: 42, time: 70.1982 }, { car: 7, lap: 43, time: 69.7005 },
+        { car: 7, lap: 44, time: 69.7870 }, { car: 7, lap: 45, time: 69.8921 },
+        { car: 7, lap: 46, time: 69.7791 }, { car: 7, lap: 47, time: 69.5918 },
+        { car: 7, lap: 48, time: 69.7392 }, { car: 7, lap: 49, time: 69.9295 },
+        { car: 7, lap: 50, time: 90.1937 }, { car: 7, lap: 51, time: 78.0174 },
+        { car: 7, lap: 52, time: 70.1279 }, { car: 7, lap: 53, time: 69.8095 },
+        { car: 7, lap: 54, time: 69.5506 }, { car: 7, lap: 55, time: 69.4863 },
+        { car: 7, lap: 56, time: 69.4008 }, { car: 7, lap: 57, time: 69.3587 },
+        { car: 7, lap: 58, time: 69.3721 }, { car: 7, lap: 59, time: 69.5808 },
+        { car: 7, lap: 60, time: 69.7229 }, { car: 7, lap: 61, time: 69.6063 },
+        { car: 7, lap: 62, time: 69.9416 }, { car: 7, lap: 63, time: 70.0215 },
+        { car: 7, lap: 64, time: 70.1744 }, { car: 7, lap: 65, time: 69.9926 },
+        { car: 7, lap: 66, time: 69.7984 }, { car: 7, lap: 67, time: 70.2339 },
+        { car: 7, lap: 68, time: 69.6660 }, { car: 7, lap: 69, time: 101.0639 },
+        { car: 7, lap: 70, time: 78.6997 }, { car: 7, lap: 71, time: 70.5647 },
+        { car: 7, lap: 72, time: 70.1566 }, { car: 7, lap: 73, time: 69.8555 },
+        { car: 7, lap: 74, time: 69.5826 }, { car: 7, lap: 75, time: 69.4973 },
+        { car: 7, lap: 76, time: 69.6343 }, { car: 7, lap: 77, time: 69.9007 },
+        { car: 7, lap: 78, time: 69.9961 }, { car: 7, lap: 79, time: 69.9401 },
+        { car: 7, lap: 80, time: 69.9082 }, { car: 7, lap: 81, time: 69.8689 },
+        { car: 7, lap: 82, time: 70.2612 }, { car: 7, lap: 83, time: 69.9900 },
+        { car: 7, lap: 84, time: 69.8204 }, { car: 7, lap: 85, time: 70.1975 },
+        { car: 7, lap: 86, time: 70.5527 }, { car: 7, lap: 87, time: 70.4728 },
+        { car: 7, lap: 88, time: 70.3476 }, { car: 7, lap: 89, time: 70.4084 },
+        { car: 7, lap: 90, time: 70.7750 }, { car: 7, lap: 91, time: 70.7750 },
+        { car: 8, lap: 1, time: 77.3518 }, { car: 8, lap: 2, time: 71.4524 },
+        { car: 8, lap: 3, time: 70.8891 }, { car: 8, lap: 4, time: 70.2921 },
+        { car: 8, lap: 5, time: 70.5517 }, { car: 8, lap: 6, time: 70.5800 },
+        { car: 8, lap: 7, time: 70.3717 }, { car: 8, lap: 8, time: 70.3705 },
+        { car: 8, lap: 9, time: 70.6879 }, { car: 8, lap: 10, time: 70.4742 },
+        { car: 8, lap: 11, time: 70.3612 }, { car: 8, lap: 12, time: 70.4434 },
+        { car: 8, lap: 13, time: 69.9679 }, { car: 8, lap: 14, time: 91.1038 },
+        { car: 8, lap: 15, time: 78.5592 }, { car: 8, lap: 16, time: 69.7007 },
+        { car: 8, lap: 17, time: 69.4309 }, { car: 8, lap: 18, time: 69.6562 },
+        { car: 8, lap: 19, time: 69.6180 }, { car: 8, lap: 20, time: 69.5776 },
+        { car: 8, lap: 21, time: 69.9567 }, { car: 8, lap: 22, time: 70.1404 },
+        { car: 8, lap: 23, time: 69.8922 }, { car: 8, lap: 24, time: 71.3955 },
+        { car: 8, lap: 25, time: 70.4900 }, { car: 8, lap: 26, time: 69.7891 },
+        { car: 8, lap: 27, time: 69.6513 }, { car: 8, lap: 28, time: 69.8930 },
+        { car: 8, lap: 29, time: 70.1046 }, { car: 8, lap: 30, time: 70.0240 },
+        { car: 8, lap: 31, time: 70.0785 }, { car: 8, lap: 32, time: 69.9866 },
+        { car: 8, lap: 33, time: 69.8090 }, { car: 8, lap: 34, time: 70.2763 },
+        { car: 8, lap: 35, time: 70.4966 }, { car: 8, lap: 36, time: 71.4097 },
+        { car: 8, lap: 37, time: 70.5518 }, { car: 8, lap: 38, time: 70.2720 },
+        { car: 8, lap: 39, time: 70.2663 }, { car: 8, lap: 40, time: 90.7144 },
+        { car: 8, lap: 41, time: 79.7160 }, { car: 8, lap: 42, time: 70.8814 },
+        { car: 8, lap: 43, time: 70.3971 }, { car: 8, lap: 44, time: 70.0760 },
+        { car: 8, lap: 45, time: 69.8013 }, { car: 8, lap: 46, time: 69.6403 },
+        { car: 8, lap: 47, time: 69.8840 }, { car: 8, lap: 48, time: 69.7423 },
+        { car: 8, lap: 49, time: 69.9013 }, { car: 8, lap: 50, time: 70.1041 },
+        { car: 8, lap: 51, time: 69.8342 }, { car: 8, lap: 52, time: 69.9927 },
+        { car: 8, lap: 53, time: 70.1023 }, { car: 8, lap: 54, time: 69.9509 },
+        { car: 8, lap: 55, time: 69.9435 }, { car: 8, lap: 56, time: 69.9278 },
+        { car: 8, lap: 57, time: 69.9406 }, { car: 8, lap: 58, time: 70.0570 },
+        { car: 8, lap: 59, time: 70.2496 }, { car: 8, lap: 60, time: 70.0817 },
+        { car: 8, lap: 61, time: 70.3420 }, { car: 8, lap: 62, time: 70.6442 },
+        { car: 8, lap: 63, time: 70.4931 }, { car: 8, lap: 64, time: 70.3457 },
+        { car: 8, lap: 65, time: 70.9284 }, { car: 8, lap: 66, time: 91.3982 },
+        { car: 8, lap: 67, time: 79.5452 }, { car: 8, lap: 68, time: 70.7587 },
+        { car: 8, lap: 69, time: 70.3700 }, { car: 8, lap: 70, time: 70.0267 },
+        { car: 8, lap: 71, time: 70.0005 }, { car: 8, lap: 72, time: 69.9790 },
+        { car: 8, lap: 73, time: 69.8309 }, { car: 8, lap: 74, time: 70.1413 },
+        { car: 8, lap: 75, time: 70.1930 }, { car: 8, lap: 76, time: 70.2892 },
+        { car: 8, lap: 77, time: 70.2112 }, { car: 8, lap: 78, time: 70.0828 },
+        { car: 8, lap: 79, time: 70.6172 }, { car: 8, lap: 80, time: 70.3355 },
+        { car: 8, lap: 81, time: 70.5866 }, { car: 8, lap: 82, time: 70.8091 },
+        { car: 8, lap: 83, time: 70.7277 }, { car: 8, lap: 84, time: 70.7022 },
+        { car: 8, lap: 85, time: 70.5980 }, { car: 8, lap: 86, time: 70.9142 },
+        { car: 8, lap: 87, time: 70.6924 }, { car: 8, lap: 88, time: 70.3648 },
+        { car: 8, lap: 89, time: 70.5951 }, { car: 8, lap: 90, time: 70.8326 },
+        { car: 8, lap: 91, time: 70.8326 }, { car: 9, lap: 1, time: 74.3586 },
+        { car: 9, lap: 2, time: 70.9280 }, { car: 9, lap: 3, time: 70.1841 },
+        { car: 9, lap: 4, time: 69.5772 }, { car: 9, lap: 5, time: 69.7979 },
+        { car: 9, lap: 6, time: 69.4465 }, { car: 9, lap: 7, time: 69.6846 },
+        { car: 9, lap: 8, time: 69.2533 }, { car: 9, lap: 9, time: 69.6122 },
+        { car: 9, lap: 10, time: 69.6067 }, { car: 9, lap: 11, time: 69.7833 },
+        { car: 9, lap: 12, time: 69.9296 }, { car: 9, lap: 13, time: 69.9258 },
+        { car: 9, lap: 14, time: 69.4740 }, { car: 9, lap: 15, time: 69.6629 },
+        { car: 9, lap: 16, time: 69.6222 }, { car: 9, lap: 17, time: 89.2571 },
+        { car: 9, lap: 18, time: 77.4761 }, { car: 9, lap: 19, time: 69.5042 },
+        { car: 9, lap: 20, time: 69.4650 }, { car: 9, lap: 21, time: 69.2064 },
+        { car: 9, lap: 22, time: 69.6790 }, { car: 9, lap: 23, time: 69.5978 },
+        { car: 9, lap: 24, time: 70.4380 }, { car: 9, lap: 25, time: 70.5965 },
+        { car: 9, lap: 26, time: 69.9054 }, { car: 9, lap: 27, time: 69.6617 },
+        { car: 9, lap: 28, time: 69.8434 }, { car: 9, lap: 29, time: 69.7339 },
+        { car: 9, lap: 30, time: 69.6238 }, { car: 9, lap: 31, time: 69.5936 },
+        { car: 9, lap: 32, time: 69.6195 }, { car: 9, lap: 33, time: 69.9790 },
+        { car: 9, lap: 34, time: 70.3242 }, { car: 9, lap: 35, time: 70.4863 },
+        { car: 9, lap: 36, time: 70.5321 }, { car: 9, lap: 37, time: 70.5424 },
+        { car: 9, lap: 38, time: 70.6012 }, { car: 9, lap: 39, time: 70.6602 },
+        { car: 9, lap: 40, time: 70.7366 }, { car: 9, lap: 41, time: 69.7517 },
+        { car: 9, lap: 42, time: 69.8699 }, { car: 9, lap: 43, time: 89.6294 },
+        { car: 9, lap: 44, time: 78.0754 }, { car: 9, lap: 45, time: 70.1979 },
+        { car: 9, lap: 46, time: 70.0067 }, { car: 9, lap: 47, time: 69.9335 },
+        { car: 9, lap: 48, time: 69.8736 }, { car: 9, lap: 49, time: 70.2282 },
+        { car: 9, lap: 50, time: 70.4616 }, { car: 9, lap: 51, time: 70.1910 },
+        { car: 9, lap: 52, time: 70.2389 }, { car: 9, lap: 53, time: 70.0315 },
+        { car: 9, lap: 54, time: 70.0628 }, { car: 9, lap: 55, time: 70.1437 },
+        { car: 9, lap: 56, time: 70.1579 }, { car: 9, lap: 57, time: 69.8891 },
+        { car: 9, lap: 58, time: 70.2629 }, { car: 9, lap: 59, time: 70.1195 },
+        { car: 9, lap: 60, time: 70.2432 }, { car: 9, lap: 61, time: 70.0814 },
+        { car: 9, lap: 62, time: 70.3512 }, { car: 9, lap: 63, time: 70.6814 },
+        { car: 9, lap: 64, time: 69.8583 }, { car: 9, lap: 65, time: 69.8321 },
+        { car: 9, lap: 66, time: 70.1566 }, { car: 9, lap: 67, time: 90.8196 },
+        { car: 9, lap: 68, time: 78.5146 }, { car: 9, lap: 69, time: 70.4451 },
+        { car: 9, lap: 70, time: 69.9041 }, { car: 9, lap: 71, time: 69.6962 },
+        { car: 9, lap: 72, time: 69.3931 }, { car: 9, lap: 73, time: 69.5957 },
+        { car: 9, lap: 74, time: 69.6549 }, { car: 9, lap: 75, time: 69.6214 },
+        { car: 9, lap: 76, time: 69.7351 }, { car: 9, lap: 77, time: 69.6245 },
+        { car: 9, lap: 78, time: 69.5705 }, { car: 9, lap: 79, time: 69.3751 },
+        { car: 9, lap: 80, time: 69.6535 }, { car: 9, lap: 81, time: 69.5416 },
+        { car: 9, lap: 82, time: 69.8338 }, { car: 9, lap: 83, time: 69.8496 },
+        { car: 9, lap: 84, time: 69.7431 }, { car: 9, lap: 85, time: 69.7924 },
+        { car: 9, lap: 86, time: 69.7100 }, { car: 9, lap: 87, time: 69.5560 },
+        { car: 9, lap: 88, time: 69.9832 }, { car: 9, lap: 89, time: 69.8822 },
+        { car: 9, lap: 90, time: 69.7964 }, { car: 9, lap: 91, time: 69.7964 },
+        { car: 10, lap: 1, time: 69.8575 }, { car: 10, lap: 2, time: 68.9530 },
+        { car: 10, lap: 3, time: 68.6922 }, { car: 10, lap: 4, time: 68.8381 },
+        { car: 10, lap: 5, time: 68.8164 }, { car: 10, lap: 6, time: 68.9988 },
+        { car: 10, lap: 7, time: 69.0141 }, { car: 10, lap: 8, time: 68.8269 },
+        { car: 10, lap: 9, time: 68.9990 }, { car: 10, lap: 10, time: 68.8942 },
+        { car: 10, lap: 11, time: 69.1905 }, { car: 10, lap: 12, time: 69.3558 },
+        { car: 10, lap: 13, time: 69.1555 }, { car: 10, lap: 14, time: 69.1180 },
+        { car: 10, lap: 15, time: 68.9940 }, { car: 10, lap: 16, time: 69.1651 },
+        { car: 10, lap: 17, time: 69.2487 }, { car: 10, lap: 18, time: 68.9517 },
+        { car: 10, lap: 19, time: 68.9659 }, { car: 10, lap: 20, time: 69.2629 },
+        { car: 10, lap: 21, time: 69.1332 }, { car: 10, lap: 22, time: 69.1180 },
+        { car: 10, lap: 23, time: 69.5288 }, { car: 10, lap: 24, time: 69.4646 },
+        { car: 10, lap: 25, time: 69.4184 }, { car: 10, lap: 26, time: 81.3940 },
+        { car: 10, lap: 27, time: 88.3954 }, { car: 10, lap: 28, time: 69.8576 },
+        { car: 10, lap: 29, time: 69.2843 }, { car: 10, lap: 30, time: 69.1016 },
+        { car: 10, lap: 31, time: 69.2753 }, { car: 10, lap: 32, time: 69.2857 },
+        { car: 10, lap: 33, time: 69.1758 }, { car: 10, lap: 34, time: 69.4161 },
+        { car: 10, lap: 35, time: 69.4828 }, { car: 10, lap: 36, time: 69.4023 },
+        { car: 10, lap: 37, time: 69.4595 }, { car: 10, lap: 38, time: 69.4041 },
+        { car: 10, lap: 39, time: 69.4645 }, { car: 10, lap: 40, time: 69.2801 },
+        { car: 10, lap: 41, time: 69.4135 }, { car: 10, lap: 42, time: 69.2068 },
+        { car: 10, lap: 43, time: 69.6663 }, { car: 10, lap: 44, time: 81.1464 },
+        { car: 10, lap: 45, time: 88.2556 }, { car: 10, lap: 46, time: 70.7377 },
+        { car: 10, lap: 47, time: 69.9778 }, { car: 10, lap: 48, time: 69.7085 },
+        { car: 10, lap: 49, time: 69.7035 }, { car: 10, lap: 50, time: 69.7592 },
+        { car: 10, lap: 51, time: 69.6961 }, { car: 10, lap: 52, time: 69.7616 },
+        { car: 10, lap: 53, time: 69.6475 }, { car: 10, lap: 54, time: 69.9188 },
+        { car: 10, lap: 55, time: 70.0896 }, { car: 10, lap: 56, time: 69.8257 },
+        { car: 10, lap: 57, time: 69.8021 }, { car: 10, lap: 58, time: 69.7145 },
+        { car: 10, lap: 59, time: 69.7121 }, { car: 10, lap: 60, time: 69.9221 },
+        { car: 10, lap: 61, time: 69.9715 }, { car: 10, lap: 62, time: 70.1406 },
+        { car: 10, lap: 63, time: 70.5446 }, { car: 10, lap: 64, time: 70.6020 },
+        { car: 10, lap: 65, time: 81.9077 }, { car: 10, lap: 66, time: 88.2969 },
+        { car: 10, lap: 67, time: 70.0745 }, { car: 10, lap: 68, time: 70.6380 },
+        { car: 10, lap: 69, time: 69.3437 }, { car: 10, lap: 70, time: 69.9646 },
+        { car: 10, lap: 71, time: 69.8681 }, { car: 10, lap: 72, time: 69.6942 },
+        { car: 10, lap: 73, time: 69.9783 }, { car: 10, lap: 74, time: 69.9078 },
+        { car: 10, lap: 75, time: 69.7355 }, { car: 10, lap: 76, time: 69.7607 },
+        { car: 10, lap: 77, time: 69.6952 }, { car: 10, lap: 78, time: 70.0092 },
+        { car: 10, lap: 79, time: 69.7441 }, { car: 10, lap: 80, time: 70.0072 },
+        { car: 10, lap: 81, time: 70.1064 }, { car: 10, lap: 82, time: 70.3925 },
+        { car: 10, lap: 83, time: 70.2675 }, { car: 10, lap: 84, time: 70.1256 },
+        { car: 10, lap: 85, time: 70.1415 }, { car: 10, lap: 86, time: 70.2129 },
+        { car: 10, lap: 87, time: 70.1696 }, { car: 10, lap: 88, time: 70.2778 },
+        { car: 10, lap: 89, time: 70.5019 }, { car: 10, lap: 90, time: 70.4364 },
+        { car: 10, lap: 91, time: 70.4364 }, { car: 12, lap: 1, time: 70.2539 },
+        { car: 12, lap: 2, time: 68.9831 }, { car: 12, lap: 3, time: 69.1696 },
+        { car: 12, lap: 4, time: 68.9047 }, { car: 12, lap: 5, time: 68.9823 },
+        { car: 12, lap: 6, time: 69.1855 }, { car: 12, lap: 7, time: 68.9886 },
+        { car: 12, lap: 8, time: 69.0816 }, { car: 12, lap: 9, time: 69.1607 },
+        { car: 12, lap: 10, time: 69.0017 }, { car: 12, lap: 11, time: 69.3890 },
+        { car: 12, lap: 12, time: 69.5517 }, { car: 12, lap: 13, time: 69.6354 },
+        { car: 12, lap: 14, time: 69.5925 }, { car: 12, lap: 15, time: 69.5126 },
+        { car: 12, lap: 16, time: 71.0161 }, { car: 12, lap: 17, time: 70.0655 },
+        { car: 12, lap: 18, time: 81.3540 }, { car: 12, lap: 19, time: 87.3455 },
+        { car: 12, lap: 20, time: 69.8865 }, { car: 12, lap: 21, time: 69.5194 },
+        { car: 12, lap: 22, time: 69.3546 }, { car: 12, lap: 23, time: 70.1117 },
+        { car: 12, lap: 24, time: 69.6643 }, { car: 12, lap: 25, time: 69.6388 },
+        { car: 12, lap: 26, time: 69.7822 }, { car: 12, lap: 27, time: 70.1906 },
+        { car: 12, lap: 28, time: 69.7431 }, { car: 12, lap: 29, time: 69.6285 },
+        { car: 12, lap: 30, time: 69.6681 }, { car: 12, lap: 31, time: 69.5314 },
+        { car: 12, lap: 32, time: 69.5730 }, { car: 12, lap: 33, time: 69.5805 },
+        { car: 12, lap: 34, time: 69.8340 }, { car: 12, lap: 35, time: 69.9673 },
+        { car: 12, lap: 36, time: 69.8464 }, { car: 12, lap: 37, time: 69.8555 },
+        { car: 12, lap: 38, time: 69.5575 }, { car: 12, lap: 39, time: 69.7320 },
+        { car: 12, lap: 40, time: 69.9871 }, { car: 12, lap: 41, time: 81.0470 },
+        { car: 12, lap: 42, time: 88.4068 }, { car: 12, lap: 43, time: 70.3240 },
+        { car: 12, lap: 44, time: 70.1256 }, { car: 12, lap: 45, time: 70.0123 },
+        { car: 12, lap: 46, time: 69.9397 }, { car: 12, lap: 47, time: 69.9352 },
+        { car: 12, lap: 48, time: 69.7456 }, { car: 12, lap: 49, time: 69.8372 },
+        { car: 12, lap: 50, time: 69.8323 }, { car: 12, lap: 51, time: 69.7756 },
+        { car: 12, lap: 52, time: 69.7069 }, { car: 12, lap: 53, time: 69.9477 },
+        { car: 12, lap: 54, time: 69.7543 }, { car: 12, lap: 55, time: 70.1448 },
+        { car: 12, lap: 56, time: 69.7721 }, { car: 12, lap: 57, time: 69.8380 },
+        { car: 12, lap: 58, time: 69.6727 }, { car: 12, lap: 59, time: 69.7574 },
+        { car: 12, lap: 60, time: 69.8725 }, { car: 12, lap: 61, time: 69.7222 },
+        { car: 12, lap: 62, time: 69.8290 }, { car: 12, lap: 63, time: 70.0630 },
+        { car: 12, lap: 64, time: 69.8564 }, { car: 12, lap: 65, time: 69.8819 },
+        { car: 12, lap: 66, time: 80.3651 }, { car: 12, lap: 67, time: 88.6730 },
+        { car: 12, lap: 68, time: 70.3493 }, { car: 12, lap: 69, time: 70.0815 },
+        { car: 12, lap: 70, time: 69.9402 }, { car: 12, lap: 71, time: 70.1024 },
+        { car: 12, lap: 72, time: 70.4765 }, { car: 12, lap: 73, time: 70.3426 },
+        { car: 12, lap: 74, time: 69.9469 }, { car: 12, lap: 75, time: 69.7705 },
+        { car: 12, lap: 76, time: 69.7497 }, { car: 12, lap: 77, time: 69.8529 },
+        { car: 12, lap: 78, time: 70.1223 }, { car: 12, lap: 79, time: 69.9235 },
+        { car: 12, lap: 80, time: 70.1023 }, { car: 12, lap: 81, time: 69.9334 },
+        { car: 12, lap: 82, time: 70.0018 }, { car: 12, lap: 83, time: 70.2791 },
+        { car: 12, lap: 84, time: 70.0178 }, { car: 12, lap: 85, time: 70.2615 },
+        { car: 12, lap: 86, time: 70.1572 }, { car: 12, lap: 87, time: 70.2699 },
+        { car: 12, lap: 88, time: 70.0631 }, { car: 12, lap: 89, time: 70.5555 },
+        { car: 12, lap: 90, time: 70.6826 }, { car: 12, lap: 91, time: 70.6826 },
+        { car: 14, lap: 1, time: 73.0051 }, { car: 14, lap: 2, time: 69.9228 },
+        { car: 14, lap: 3, time: 69.3981 }, { car: 14, lap: 4, time: 69.1191 },
+        { car: 14, lap: 5, time: 69.3701 }, { car: 14, lap: 6, time: 69.5693 },
+        { car: 14, lap: 7, time: 69.6942 }, { car: 14, lap: 8, time: 69.3790 },
+        { car: 14, lap: 9, time: 70.5288 }, { car: 14, lap: 10, time: 69.8189 },
+        { car: 14, lap: 11, time: 69.8767 }, { car: 14, lap: 12, time: 69.7516 },
+        { car: 14, lap: 13, time: 69.7815 }, { car: 14, lap: 14, time: 69.9066 },
+        { car: 14, lap: 15, time: 69.8570 }, { car: 14, lap: 16, time: 69.8273 },
+        { car: 14, lap: 17, time: 69.7566 }, { car: 14, lap: 18, time: 69.5429 },
+        { car: 14, lap: 19, time: 69.6165 }, { car: 14, lap: 20, time: 69.6049 },
+        { car: 14, lap: 21, time: 69.7236 }, { car: 14, lap: 22, time: 91.0241 },
+        { car: 14, lap: 23, time: 79.6880 }, { car: 14, lap: 24, time: 71.4529 },
+        { car: 14, lap: 25, time: 71.1174 }, { car: 14, lap: 26, time: 70.2596 },
+        { car: 14, lap: 27, time: 69.9657 }, { car: 14, lap: 28, time: 70.1099 },
+        { car: 14, lap: 29, time: 69.9416 }, { car: 14, lap: 30, time: 70.0130 },
+        { car: 14, lap: 31, time: 69.9026 }, { car: 14, lap: 32, time: 70.0414 },
+        { car: 14, lap: 33, time: 69.8925 }, { car: 14, lap: 34, time: 70.1510 },
+        { car: 14, lap: 35, time: 69.9734 }, { car: 14, lap: 36, time: 70.1188 },
+        { car: 14, lap: 37, time: 69.9610 }, { car: 14, lap: 38, time: 69.9702 },
+        { car: 14, lap: 39, time: 70.2439 }, { car: 14, lap: 40, time: 70.3176 },
+        { car: 14, lap: 41, time: 70.1783 }, { car: 14, lap: 42, time: 70.1453 },
+        { car: 14, lap: 43, time: 69.7105 }, { car: 14, lap: 44, time: 69.3939 },
+        { car: 14, lap: 45, time: 69.3858 }, { car: 14, lap: 46, time: 90.0932 },
+        { car: 14, lap: 47, time: 77.9905 }, { car: 14, lap: 48, time: 70.3047 },
+        { car: 14, lap: 49, time: 69.9050 }, { car: 14, lap: 50, time: 69.8019 },
+        { car: 14, lap: 51, time: 69.9463 }, { car: 14, lap: 52, time: 69.8970 },
+        { car: 14, lap: 53, time: 69.8621 }, { car: 14, lap: 54, time: 70.0139 },
+        { car: 14, lap: 55, time: 70.0226 }, { car: 14, lap: 56, time: 70.2866 },
+        { car: 14, lap: 57, time: 70.1599 }, { car: 14, lap: 58, time: 70.2799 },
+        { car: 14, lap: 59, time: 70.0826 }, { car: 14, lap: 60, time: 70.2274 },
+        { car: 14, lap: 61, time: 70.3736 }, { car: 14, lap: 62, time: 70.1410 },
+        { car: 14, lap: 63, time: 70.1859 }, { car: 14, lap: 64, time: 70.3852 },
+        { car: 14, lap: 65, time: 70.0578 }, { car: 14, lap: 66, time: 70.1746 },
+        { car: 14, lap: 67, time: 70.3268 }, { car: 14, lap: 68, time: 92.6932 },
+        { car: 14, lap: 69, time: 78.6544 }, { car: 14, lap: 70, time: 70.4467 },
+        { car: 14, lap: 71, time: 70.0309 }, { car: 14, lap: 72, time: 69.5428 },
+        { car: 14, lap: 73, time: 69.7605 }, { car: 14, lap: 74, time: 69.6664 },
+        { car: 14, lap: 75, time: 69.8521 }, { car: 14, lap: 76, time: 70.0624 },
+        { car: 14, lap: 77, time: 70.6820 }, { car: 14, lap: 78, time: 70.3065 },
+        { car: 14, lap: 79, time: 70.3643 }, { car: 14, lap: 80, time: 70.1647 },
+        { car: 14, lap: 81, time: 70.4051 }, { car: 14, lap: 82, time: 70.4446 },
+        { car: 14, lap: 83, time: 70.3671 }, { car: 14, lap: 84, time: 70.3446 },
+        { car: 14, lap: 85, time: 70.3642 }, { car: 14, lap: 86, time: 70.2733 },
+        { car: 14, lap: 87, time: 70.5211 }, { car: 14, lap: 88, time: 71.0298 },
+        { car: 14, lap: 89, time: 70.8061 }, { car: 14, lap: 90, time: 71.5069 },
+        { car: 14, lap: 91, time: 71.5069 }, { car: 15, lap: 1, time: 71.5812 },
+        { car: 15, lap: 2, time: 68.8770 }, { car: 15, lap: 3, time: 68.7766 },
+        { car: 15, lap: 4, time: 68.9644 }, { car: 15, lap: 5, time: 69.1231 },
+        { car: 15, lap: 6, time: 69.0756 }, { car: 15, lap: 7, time: 69.1491 },
+        { car: 15, lap: 8, time: 69.1170 }, { car: 15, lap: 9, time: 69.3810 },
+        { car: 15, lap: 10, time: 69.3648 }, { car: 15, lap: 11, time: 69.3108 },
+        { car: 15, lap: 12, time: 69.1608 }, { car: 15, lap: 13, time: 69.3926 },
+        { car: 15, lap: 14, time: 69.2884 }, { car: 15, lap: 15, time: 69.3178 },
+        { car: 15, lap: 16, time: 69.3203 }, { car: 15, lap: 17, time: 69.3427 },
+        { car: 15, lap: 18, time: 69.1281 }, { car: 15, lap: 19, time: 69.4315 },
+        { car: 15, lap: 20, time: 69.1202 }, { car: 15, lap: 21, time: 69.2157 },
+        { car: 15, lap: 22, time: 69.2444 }, { car: 15, lap: 23, time: 69.8586 },
+        { car: 15, lap: 24, time: 90.6638 }, { car: 15, lap: 25, time: 78.0505 },
+        { car: 15, lap: 26, time: 69.4712 }, { car: 15, lap: 27, time: 68.8848 },
+        { car: 15, lap: 28, time: 69.2456 }, { car: 15, lap: 29, time: 69.2371 },
+        { car: 15, lap: 30, time: 69.1636 }, { car: 15, lap: 31, time: 69.1145 },
+        { car: 15, lap: 32, time: 69.7442 }, { car: 15, lap: 33, time: 69.3855 },
+        { car: 15, lap: 34, time: 69.2482 }, { car: 15, lap: 35, time: 69.3833 },
+        { car: 15, lap: 36, time: 69.2789 }, { car: 15, lap: 37, time: 69.6640 },
+        { car: 15, lap: 38, time: 69.5842 }, { car: 15, lap: 39, time: 69.7569 },
+        { car: 15, lap: 40, time: 69.8534 }, { car: 15, lap: 41, time: 70.0051 },
+        { car: 15, lap: 42, time: 70.2964 }, { car: 15, lap: 43, time: 70.1642 },
+        { car: 15, lap: 44, time: 70.2235 }, { car: 15, lap: 45, time: 92.0025 },
+        { car: 15, lap: 46, time: 78.2686 }, { car: 15, lap: 47, time: 70.1986 },
+        { car: 15, lap: 48, time: 69.5297 }, { car: 15, lap: 49, time: 69.5953 },
+        { car: 15, lap: 50, time: 69.0897 }, { car: 15, lap: 51, time: 70.1907 },
+        { car: 15, lap: 52, time: 71.0251 }, { car: 15, lap: 53, time: 70.2311 },
+        { car: 15, lap: 54, time: 69.8710 }, { car: 15, lap: 55, time: 69.8654 },
+        { car: 15, lap: 56, time: 69.7261 }, { car: 15, lap: 57, time: 69.7932 },
+        { car: 15, lap: 58, time: 69.9558 }, { car: 15, lap: 59, time: 69.6417 },
+        { car: 15, lap: 60, time: 69.9046 }, { car: 15, lap: 61, time: 70.0739 },
+        { car: 15, lap: 62, time: 70.2843 }, { car: 15, lap: 63, time: 70.2683 },
+        { car: 15, lap: 64, time: 70.0994 }, { car: 15, lap: 65, time: 70.3795 },
+        { car: 15, lap: 66, time: 91.2550 }, { car: 15, lap: 67, time: 79.5181 },
+        { car: 15, lap: 68, time: 71.0716 }, { car: 15, lap: 69, time: 70.5477 },
+        { car: 15, lap: 70, time: 70.0817 }, { car: 15, lap: 71, time: 70.1170 },
+        { car: 15, lap: 72, time: 70.0011 }, { car: 15, lap: 73, time: 70.0523 },
+        { car: 15, lap: 74, time: 69.9913 }, { car: 15, lap: 75, time: 69.8779 },
+        { car: 15, lap: 76, time: 69.8857 }, { car: 15, lap: 77, time: 70.1558 },
+        { car: 15, lap: 78, time: 70.1098 }, { car: 15, lap: 79, time: 69.9300 },
+        { car: 15, lap: 80, time: 69.9756 }, { car: 15, lap: 81, time: 69.9464 },
+        { car: 15, lap: 82, time: 70.1151 }, { car: 15, lap: 83, time: 70.1733 },
+        { car: 15, lap: 84, time: 69.9625 }, { car: 15, lap: 85, time: 70.3000 },
+        { car: 15, lap: 86, time: 70.5467 }, { car: 15, lap: 87, time: 70.4560 },
+        { car: 15, lap: 88, time: 71.5539 }, { car: 15, lap: 89, time: 70.9229 },
+        { car: 15, lap: 90, time: 70.4390 }, { car: 15, lap: 91, time: 70.4390 },
+        { car: 18, lap: 1, time: 73.9611 }, { car: 18, lap: 2, time: 71.7072 },
+        { car: 18, lap: 3, time: 70.0164 }, { car: 18, lap: 4, time: 69.4300 },
+        { car: 18, lap: 5, time: 69.3564 }, { car: 18, lap: 6, time: 69.3704 },
+        { car: 18, lap: 7, time: 69.2569 }, { car: 18, lap: 8, time: 69.3559 },
+        { car: 18, lap: 9, time: 69.6078 }, { car: 18, lap: 10, time: 69.9522 },
+        { car: 18, lap: 11, time: 69.2064 }, { car: 18, lap: 12, time: 69.4209 },
+        { car: 18, lap: 13, time: 69.8447 }, { car: 18, lap: 14, time: 69.7699 },
+        { car: 18, lap: 15, time: 69.9579 }, { car: 18, lap: 16, time: 69.2196 },
+        { car: 18, lap: 17, time: 69.7700 }, { car: 18, lap: 18, time: 69.5198 },
+        { car: 18, lap: 19, time: 69.5849 }, { car: 18, lap: 20, time: 69.6775 },
+        { car: 18, lap: 21, time: 69.5637 }, { car: 18, lap: 22, time: 69.4553 },
+        { car: 18, lap: 23, time: 90.0100 }, { car: 18, lap: 24, time: 78.7955 },
+        { car: 18, lap: 25, time: 70.1799 }, { car: 18, lap: 26, time: 69.5310 },
+        { car: 18, lap: 27, time: 69.0633 }, { car: 18, lap: 28, time: 69.5661 },
+        { car: 18, lap: 29, time: 69.4186 }, { car: 18, lap: 30, time: 69.4541 },
+        { car: 18, lap: 31, time: 69.9014 }, { car: 18, lap: 32, time: 69.8991 },
+        { car: 18, lap: 33, time: 70.4354 }, { car: 18, lap: 34, time: 70.6824 },
+        { car: 18, lap: 35, time: 70.4733 }, { car: 18, lap: 36, time: 70.5311 },
+        { car: 18, lap: 37, time: 70.3869 }, { car: 18, lap: 38, time: 70.9352 },
+        { car: 18, lap: 39, time: 71.0142 }, { car: 18, lap: 40, time: 91.5088 },
+        { car: 18, lap: 41, time: 79.2582 }, { car: 18, lap: 42, time: 70.6315 },
+        { car: 18, lap: 43, time: 70.5907 }, { car: 18, lap: 44, time: 70.2661 },
+        { car: 18, lap: 45, time: 70.3654 }, { car: 18, lap: 46, time: 70.1161 },
+        { car: 18, lap: 47, time: 70.1412 }, { car: 18, lap: 48, time: 70.5226 },
+        { car: 18, lap: 49, time: 70.7497 }, { car: 18, lap: 50, time: 70.6773 },
+        { car: 18, lap: 51, time: 70.3236 }, { car: 18, lap: 52, time: 70.2544 },
+        { car: 18, lap: 53, time: 70.5467 }, { car: 18, lap: 54, time: 70.3651 },
+        { car: 18, lap: 55, time: 70.3353 }, { car: 18, lap: 56, time: 70.3581 },
+        { car: 18, lap: 57, time: 70.1000 }, { car: 18, lap: 58, time: 70.2571 },
+        { car: 18, lap: 59, time: 70.5733 }, { car: 18, lap: 60, time: 70.6148 },
+        { car: 18, lap: 61, time: 70.5460 }, { car: 18, lap: 62, time: 70.5709 },
+        { car: 18, lap: 63, time: 70.5950 }, { car: 18, lap: 64, time: 70.4667 },
+        { car: 18, lap: 65, time: 70.4675 }, { car: 18, lap: 66, time: 96.3081 },
+        { car: 18, lap: 67, time: 78.6027 }, { car: 18, lap: 68, time: 70.5657 },
+        { car: 18, lap: 69, time: 70.1810 }, { car: 18, lap: 70, time: 70.4673 },
+        { car: 18, lap: 71, time: 70.4514 }, { car: 18, lap: 72, time: 70.4439 },
+        { car: 18, lap: 73, time: 69.9939 }, { car: 18, lap: 74, time: 69.6805 },
+        { car: 18, lap: 75, time: 70.0508 }, { car: 18, lap: 76, time: 69.9728 },
+        { car: 18, lap: 77, time: 70.5340 }, { car: 18, lap: 78, time: 70.3303 },
+        { car: 18, lap: 79, time: 70.4741 }, { car: 18, lap: 80, time: 70.6183 },
+        { car: 18, lap: 81, time: 70.6798 }, { car: 18, lap: 82, time: 70.5897 },
+        { car: 18, lap: 83, time: 70.6431 }, { car: 18, lap: 84, time: 71.0234 },
+        { car: 18, lap: 85, time: 70.8390 }, { car: 18, lap: 86, time: 71.0748 },
+        { car: 18, lap: 87, time: 70.6071 }, { car: 18, lap: 88, time: 70.7965 },
+        { car: 18, lap: 89, time: 71.3227 }, { car: 18, lap: 90, time: 71.5410 },
+        { car: 18, lap: 91, time: 71.5410 }, { car: 19, lap: 1, time: 76.2909 },
+        { car: 19, lap: 2, time: 71.5199 }, { car: 19, lap: 3, time: 70.5053 },
+        { car: 19, lap: 4, time: 70.5331 }, { car: 19, lap: 5, time: 70.4562 },
+        { car: 19, lap: 6, time: 70.6528 }, { car: 19, lap: 7, time: 70.2943 },
+        { car: 19, lap: 8, time: 70.2609 }, { car: 19, lap: 9, time: 70.7192 },
+        { car: 19, lap: 10, time: 70.2215 }, { car: 19, lap: 11, time: 70.4758 },
+        { car: 19, lap: 12, time: 91.0609 }, { car: 19, lap: 13, time: 78.3236 },
+        { car: 19, lap: 14, time: 69.7384 }, { car: 19, lap: 15, time: 69.6030 },
+        { car: 19, lap: 16, time: 69.5448 }, { car: 19, lap: 17, time: 69.7109 },
+        { car: 19, lap: 18, time: 69.7133 }, { car: 19, lap: 19, time: 69.8818 },
+        { car: 19, lap: 20, time: 70.0085 }, { car: 19, lap: 21, time: 69.9265 },
+        { car: 19, lap: 22, time: 70.0683 }, { car: 19, lap: 23, time: 69.8225 },
+        { car: 19, lap: 24, time: 69.5902 }, { car: 19, lap: 25, time: 69.9825 },
+        { car: 19, lap: 26, time: 70.3001 }, { car: 19, lap: 27, time: 70.0414 },
+        { car: 19, lap: 28, time: 70.5079 }, { car: 19, lap: 29, time: 70.2550 },
+        { car: 19, lap: 30, time: 70.0713 }, { car: 19, lap: 31, time: 70.2788 },
+        { car: 19, lap: 32, time: 70.1567 }, { car: 19, lap: 33, time: 70.1750 },
+        { car: 19, lap: 34, time: 70.3890 }, { car: 19, lap: 35, time: 71.0266 },
+        { car: 19, lap: 36, time: 70.4204 }, { car: 19, lap: 37, time: 70.0167 },
+        { car: 19, lap: 38, time: 97.5688 }, { car: 19, lap: 39, time: 78.9654 },
+        { car: 19, lap: 40, time: 72.2962 }, { car: 19, lap: 41, time: 71.3155 },
+        { car: 19, lap: 42, time: 70.7263 }, { car: 19, lap: 43, time: 70.5178 },
+        { car: 19, lap: 44, time: 70.6353 }, { car: 19, lap: 45, time: 70.3586 },
+        { car: 19, lap: 46, time: 70.1763 }, { car: 19, lap: 47, time: 70.2143 },
+        { car: 19, lap: 48, time: 70.2384 }, { car: 19, lap: 49, time: 70.5477 },
+        { car: 19, lap: 50, time: 70.3153 }, { car: 19, lap: 51, time: 70.5570 },
+        { car: 19, lap: 52, time: 70.4728 }, { car: 19, lap: 53, time: 70.4062 },
+        { car: 19, lap: 54, time: 70.5026 }, { car: 19, lap: 55, time: 70.4383 },
+        { car: 19, lap: 56, time: 70.4376 }, { car: 19, lap: 57, time: 70.2804 },
+        { car: 19, lap: 58, time: 70.3248 }, { car: 19, lap: 59, time: 70.2639 },
+        { car: 19, lap: 60, time: 70.2584 }, { car: 19, lap: 61, time: 70.3864 },
+        { car: 19, lap: 62, time: 70.5262 }, { car: 19, lap: 63, time: 70.5169 },
+        { car: 19, lap: 64, time: 92.7845 }, { car: 19, lap: 65, time: 78.9292 },
+        { car: 19, lap: 66, time: 70.9164 }, { car: 19, lap: 67, time: 71.9680 },
+        { car: 19, lap: 68, time: 70.7430 }, { car: 19, lap: 69, time: 70.3136 },
+        { car: 19, lap: 70, time: 70.3272 }, { car: 19, lap: 71, time: 70.2678 },
+        { car: 19, lap: 72, time: 70.4145 }, { car: 19, lap: 73, time: 70.2122 },
+        { car: 19, lap: 74, time: 70.2135 }, { car: 19, lap: 75, time: 70.2039 },
+        { car: 19, lap: 76, time: 70.2309 }, { car: 19, lap: 77, time: 70.2372 },
+        { car: 19, lap: 78, time: 70.2346 }, { car: 19, lap: 79, time: 70.5675 },
+        { car: 19, lap: 80, time: 70.4026 }, { car: 19, lap: 81, time: 70.3959 },
+        { car: 19, lap: 82, time: 70.5615 }, { car: 19, lap: 83, time: 70.6097 },
+        { car: 19, lap: 84, time: 70.5555 }, { car: 19, lap: 85, time: 70.4655 },
+        { car: 19, lap: 86, time: 70.5892 }, { car: 19, lap: 87, time: 70.7135 },
+        { car: 19, lap: 88, time: 70.3820 }, { car: 19, lap: 89, time: 70.4276 },
+        { car: 19, lap: 90, time: 70.4276 }, { car: 20, lap: 1, time: 74.9173 },
+        { car: 20, lap: 2, time: 71.0206 }, { car: 20, lap: 3, time: 70.2736 },
+        { car: 20, lap: 4, time: 70.6783 }, { car: 20, lap: 5, time: 70.1151 },
+        { car: 20, lap: 6, time: 70.0000 }, { car: 20, lap: 7, time: 69.8044 },
+        { car: 20, lap: 8, time: 69.6480 }, { car: 20, lap: 9, time: 69.8854 },
+        { car: 20, lap: 10, time: 69.8288 }, { car: 20, lap: 11, time: 69.8449 },
+        { car: 20, lap: 12, time: 69.8282 }, { car: 20, lap: 13, time: 69.8715 },
+        { car: 20, lap: 14, time: 69.5967 }, { car: 20, lap: 15, time: 69.6431 },
+        { car: 20, lap: 16, time: 69.5954 }, { car: 20, lap: 17, time: 69.4258 },
+        { car: 20, lap: 18, time: 69.1054 }, { car: 20, lap: 19, time: 69.1589 },
+        { car: 20, lap: 20, time: 69.2855 }, { car: 20, lap: 21, time: 69.3949 },
+        { car: 20, lap: 22, time: 69.5005 }, { car: 20, lap: 23, time: 90.2469 },
+        { car: 20, lap: 24, time: 80.1281 }, { car: 20, lap: 25, time: 71.0867 },
+        { car: 20, lap: 26, time: 70.5397 }, { car: 20, lap: 27, time: 70.1013 },
+        { car: 20, lap: 28, time: 70.2087 }, { car: 20, lap: 29, time: 70.0681 },
+        { car: 20, lap: 30, time: 70.0324 }, { car: 20, lap: 31, time: 69.8826 },
+        { car: 20, lap: 32, time: 69.8412 }, { car: 20, lap: 33, time: 69.8022 },
+        { car: 20, lap: 34, time: 70.2614 }, { car: 20, lap: 35, time: 70.1843 },
+        { car: 20, lap: 36, time: 70.4051 }, { car: 20, lap: 37, time: 69.9856 },
+        { car: 20, lap: 38, time: 70.0016 }, { car: 20, lap: 39, time: 70.2036 },
+        { car: 20, lap: 40, time: 69.9906 }, { car: 20, lap: 41, time: 69.8329 },
+        { car: 20, lap: 42, time: 69.8468 }, { car: 20, lap: 43, time: 69.7818 },
+        { car: 20, lap: 44, time: 69.9401 }, { car: 20, lap: 45, time: 69.9243 },
+        { car: 20, lap: 46, time: 69.7126 }, { car: 20, lap: 47, time: 69.7574 },
+        { car: 20, lap: 48, time: 90.9097 }, { car: 20, lap: 49, time: 78.8341 },
+        { car: 20, lap: 50, time: 70.5855 }, { car: 20, lap: 51, time: 70.1742 },
+        { car: 20, lap: 52, time: 70.2396 }, { car: 20, lap: 53, time: 70.2576 },
+        { car: 20, lap: 54, time: 70.3496 }, { car: 20, lap: 55, time: 70.4635 },
+        { car: 20, lap: 56, time: 70.2587 }, { car: 20, lap: 57, time: 70.4057 },
+        { car: 20, lap: 58, time: 70.2952 }, { car: 20, lap: 59, time: 70.3328 },
+        { car: 20, lap: 60, time: 70.5125 }, { car: 20, lap: 61, time: 70.5214 },
+        { car: 20, lap: 62, time: 70.8229 }, { car: 20, lap: 63, time: 70.5713 },
+        { car: 20, lap: 64, time: 70.7165 }, { car: 20, lap: 65, time: 70.6932 },
+        { car: 20, lap: 66, time: 70.9383 }, { car: 20, lap: 67, time: 89.9813 },
+        { car: 20, lap: 68, time: 78.8949 }, { car: 20, lap: 69, time: 71.0171 },
+        { car: 20, lap: 70, time: 70.3234 }, { car: 20, lap: 71, time: 70.1908 },
+        { car: 20, lap: 72, time: 70.1638 }, { car: 20, lap: 73, time: 70.2430 },
+        { car: 20, lap: 74, time: 70.3352 }, { car: 20, lap: 75, time: 70.2108 },
+        { car: 20, lap: 76, time: 70.3054 }, { car: 20, lap: 77, time: 70.3180 },
+        { car: 20, lap: 78, time: 70.3410 }, { car: 20, lap: 79, time: 70.5557 },
+        { car: 20, lap: 80, time: 70.6750 }, { car: 20, lap: 81, time: 70.7546 },
+        { car: 20, lap: 82, time: 70.7772 }, { car: 20, lap: 83, time: 70.5773 },
+        { car: 20, lap: 84, time: 70.7059 }, { car: 20, lap: 85, time: 70.6682 },
+        { car: 20, lap: 86, time: 70.6353 }, { car: 20, lap: 87, time: 70.6176 },
+        { car: 20, lap: 88, time: 70.5105 }, { car: 20, lap: 89, time: 70.4892 },
+        { car: 20, lap: 90, time: 70.5251 }, { car: 20, lap: 91, time: 70.5251 },
+        { car: 21, lap: 1, time: 76.1572 }, { car: 21, lap: 2, time: 71.1003 },
+        { car: 21, lap: 3, time: 70.6247 }, { car: 21, lap: 4, time: 70.3987 },
+        { car: 21, lap: 5, time: 70.5615 }, { car: 21, lap: 6, time: 70.1527 },
+        { car: 21, lap: 7, time: 70.3659 }, { car: 21, lap: 8, time: 70.0475 },
+        { car: 21, lap: 9, time: 70.5295 }, { car: 21, lap: 10, time: 70.4645 },
+        { car: 21, lap: 11, time: 70.3310 }, { car: 21, lap: 12, time: 70.2253 },
+        { car: 21, lap: 13, time: 70.2475 }, { car: 21, lap: 14, time: 70.0696 },
+        { car: 21, lap: 15, time: 69.9201 }, { car: 21, lap: 16, time: 69.8446 },
+        { car: 21, lap: 17, time: 69.6046 }, { car: 21, lap: 18, time: 69.5804 },
+        { car: 21, lap: 19, time: 69.3846 }, { car: 21, lap: 20, time: 69.3330 },
+        { car: 21, lap: 21, time: 69.7252 }, { car: 21, lap: 22, time: 69.8458 },
+        { car: 21, lap: 23, time: 69.9721 }, { car: 21, lap: 24, time: 90.6223 },
+        { car: 21, lap: 25, time: 78.1188 }, { car: 21, lap: 26, time: 70.2705 },
+        { car: 21, lap: 27, time: 70.4109 }, { car: 21, lap: 28, time: 70.1971 },
+        { car: 21, lap: 29, time: 69.9814 }, { car: 21, lap: 30, time: 70.1518 },
+        { car: 21, lap: 31, time: 70.2530 }, { car: 21, lap: 32, time: 69.9690 },
+        { car: 21, lap: 33, time: 69.7373 }, { car: 21, lap: 34, time: 69.9250 },
+        { car: 21, lap: 35, time: 70.1246 }, { car: 21, lap: 36, time: 70.4800 },
+        { car: 21, lap: 37, time: 70.2639 }, { car: 21, lap: 38, time: 70.2762 },
+        { car: 21, lap: 39, time: 70.3250 }, { car: 21, lap: 40, time: 90.4688 },
+        { car: 21, lap: 41, time: 78.8528 }, { car: 21, lap: 42, time: 70.9056 },
+        { car: 21, lap: 43, time: 70.1787 }, { car: 21, lap: 44, time: 70.0689 },
+        { car: 21, lap: 45, time: 70.2026 }, { car: 21, lap: 46, time: 70.2234 },
+        { car: 21, lap: 47, time: 70.1466 }, { car: 21, lap: 48, time: 70.1043 },
+        { car: 21, lap: 49, time: 70.1789 }, { car: 21, lap: 50, time: 70.1304 },
+        { car: 21, lap: 51, time: 70.3887 }, { car: 21, lap: 52, time: 70.4186 },
+        { car: 21, lap: 53, time: 70.3549 }, { car: 21, lap: 54, time: 70.2696 },
+        { car: 21, lap: 55, time: 70.3274 }, { car: 21, lap: 56, time: 70.3616 },
+        { car: 21, lap: 57, time: 70.1651 }, { car: 21, lap: 58, time: 70.2887 },
+        { car: 21, lap: 59, time: 70.5298 }, { car: 21, lap: 60, time: 70.4408 },
+        { car: 21, lap: 61, time: 70.1446 }, { car: 21, lap: 62, time: 70.5252 },
+        { car: 21, lap: 63, time: 70.5281 }, { car: 21, lap: 64, time: 70.7588 },
+        { car: 21, lap: 65, time: 91.4650 }, { car: 21, lap: 66, time: 78.9737 },
+        { car: 21, lap: 67, time: 70.8962 }, { car: 21, lap: 68, time: 70.3562 },
+        { car: 21, lap: 69, time: 70.2849 }, { car: 21, lap: 70, time: 70.0380 },
+        { car: 21, lap: 71, time: 70.1648 }, { car: 21, lap: 72, time: 70.4871 },
+        { car: 21, lap: 73, time: 70.4332 }, { car: 21, lap: 74, time: 70.2923 },
+        { car: 21, lap: 75, time: 70.3646 }, { car: 21, lap: 76, time: 70.4479 },
+        { car: 21, lap: 77, time: 70.6068 }, { car: 21, lap: 78, time: 70.2576 },
+        { car: 21, lap: 79, time: 70.5291 }, { car: 21, lap: 80, time: 70.5624 },
+        { car: 21, lap: 81, time: 70.7051 }, { car: 21, lap: 82, time: 70.6878 },
+        { car: 21, lap: 83, time: 70.7913 }, { car: 21, lap: 84, time: 70.5326 },
+        { car: 21, lap: 85, time: 70.9260 }, { car: 21, lap: 86, time: 70.8240 },
+        { car: 21, lap: 87, time: 70.4922 }, { car: 21, lap: 88, time: 70.6002 },
+        { car: 21, lap: 89, time: 70.6841 }, { car: 21, lap: 90, time: 70.6582 },
+        { car: 21, lap: 91, time: 70.6582 }, { car: 26, lap: 1, time: 77.3508 },
+        { car: 26, lap: 2, time: 71.5488 }, { car: 26, lap: 3, time: 70.8841 },
+        { car: 26, lap: 4, time: 70.4097 }, { car: 26, lap: 5, time: 70.5659 },
+        { car: 26, lap: 6, time: 70.6583 }, { car: 26, lap: 7, time: 70.3811 },
+        { car: 26, lap: 8, time: 70.3711 }, { car: 26, lap: 9, time: 70.5477 },
+        { car: 26, lap: 10, time: 70.8023 }, { car: 26, lap: 11, time: 70.4902 },
+        { car: 26, lap: 12, time: 70.4909 }, { car: 26, lap: 13, time: 69.7819 },
+        { car: 26, lap: 14, time: 69.6381 }, { car: 26, lap: 15, time: 69.0121 },
+        { car: 26, lap: 16, time: 69.9099 }, { car: 26, lap: 17, time: 69.4242 },
+        { car: 26, lap: 18, time: 69.8895 }, { car: 26, lap: 19, time: 69.4730 },
+        { car: 26, lap: 20, time: 69.5081 }, { car: 26, lap: 21, time: 69.5143 },
+        { car: 26, lap: 22, time: 69.7838 }, { car: 26, lap: 23, time: 69.6225 },
+        { car: 26, lap: 24, time: 69.0960 }, { car: 26, lap: 25, time: 79.6443 },
+        { car: 26, lap: 26, time: 87.6869 }, { car: 26, lap: 27, time: 70.0618 },
+        { car: 26, lap: 28, time: 69.7798 }, { car: 26, lap: 29, time: 69.7823 },
+        { car: 26, lap: 30, time: 69.8369 }, { car: 26, lap: 31, time: 69.7079 },
+        { car: 26, lap: 32, time: 69.8949 }, { car: 26, lap: 33, time: 69.7591 },
+        { car: 26, lap: 34, time: 70.0045 }, { car: 26, lap: 35, time: 70.1163 },
+        { car: 26, lap: 36, time: 69.8667 }, { car: 26, lap: 37, time: 69.8355 },
+        { car: 26, lap: 38, time: 69.7368 }, { car: 26, lap: 39, time: 69.8487 },
+        { car: 26, lap: 40, time: 70.0691 }, { car: 26, lap: 41, time: 70.0486 },
+        { car: 26, lap: 42, time: 69.9689 }, { car: 26, lap: 43, time: 69.2489 },
+        { car: 26, lap: 44, time: 69.4322 }, { car: 26, lap: 45, time: 69.6692 },
+        { car: 26, lap: 46, time: 70.9857 }, { car: 26, lap: 47, time: 70.5635 },
+        { car: 26, lap: 48, time: 80.9712 }, { car: 26, lap: 49, time: 88.5159 },
+        { car: 26, lap: 50, time: 70.2626 }, { car: 26, lap: 51, time: 69.8471 },
+        { car: 26, lap: 52, time: 69.9301 }, { car: 26, lap: 53, time: 69.7994 },
+        { car: 26, lap: 54, time: 70.1467 }, { car: 26, lap: 55, time: 70.2026 },
+        { car: 26, lap: 56, time: 70.4314 }, { car: 26, lap: 57, time: 70.3615 },
+        { car: 26, lap: 58, time: 70.3292 }, { car: 26, lap: 59, time: 70.5081 },
+        { car: 26, lap: 60, time: 70.4903 }, { car: 26, lap: 61, time: 70.5377 },
+        { car: 26, lap: 62, time: 70.7908 }, { car: 26, lap: 63, time: 70.4850 },
+        { car: 26, lap: 64, time: 70.5962 }, { car: 26, lap: 65, time: 70.6643 },
+        { car: 26, lap: 66, time: 70.4122 }, { car: 26, lap: 67, time: 70.1052 },
+        { car: 26, lap: 68, time: 69.6984 }, { car: 26, lap: 69, time: 81.6121 },
+        { car: 26, lap: 70, time: 89.1024 }, { car: 26, lap: 71, time: 70.0603 },
+        { car: 26, lap: 72, time: 70.0096 }, { car: 26, lap: 73, time: 69.9141 },
+        { car: 26, lap: 74, time: 70.0796 }, { car: 26, lap: 75, time: 70.4536 },
+        { car: 26, lap: 76, time: 70.5464 }, { car: 26, lap: 77, time: 70.3206 },
+        { car: 26, lap: 78, time: 70.3509 }, { car: 26, lap: 79, time: 70.6386 },
+        { car: 26, lap: 80, time: 70.2953 }, { car: 26, lap: 81, time: 70.7421 },
+        { car: 26, lap: 82, time: 70.7550 }, { car: 26, lap: 83, time: 70.5751 },
+        { car: 26, lap: 84, time: 70.8201 }, { car: 26, lap: 85, time: 70.8115 },
+        { car: 26, lap: 86, time: 70.4909 }, { car: 26, lap: 87, time: 70.7458 },
+        { car: 26, lap: 88, time: 70.6010 }, { car: 26, lap: 89, time: 70.5793 },
+        { car: 26, lap: 90, time: 70.6190 }, { car: 26, lap: 91, time: 70.6190 },
+        { car: 27, lap: 1, time: 71.9222 }, { car: 27, lap: 2, time: 69.2996 },
+        { car: 27, lap: 3, time: 68.9761 }, { car: 27, lap: 4, time: 69.0023 },
+        { car: 27, lap: 5, time: 69.1161 }, { car: 27, lap: 6, time: 68.9622 },
+        { car: 27, lap: 7, time: 69.3259 }, { car: 27, lap: 8, time: 69.1991 },
+        { car: 27, lap: 9, time: 69.3667 }, { car: 27, lap: 10, time: 69.4063 },
+        { car: 27, lap: 11, time: 69.5049 }, { car: 27, lap: 12, time: 69.4020 },
+        { car: 27, lap: 13, time: 69.5892 }, { car: 27, lap: 14, time: 69.5078 },
+        { car: 27, lap: 15, time: 69.7536 }, { car: 27, lap: 16, time: 69.5327 },
+        { car: 27, lap: 17, time: 80.4276 }, { car: 27, lap: 18, time: 87.0426 },
+        { car: 27, lap: 19, time: 70.0052 }, { car: 27, lap: 20, time: 70.3541 },
+        { car: 27, lap: 21, time: 69.7519 }, { car: 27, lap: 22, time: 69.3520 },
+        { car: 27, lap: 23, time: 69.8021 }, { car: 27, lap: 24, time: 70.0183 },
+        { car: 27, lap: 25, time: 69.6632 }, { car: 27, lap: 26, time: 69.7830 },
+        { car: 27, lap: 27, time: 69.9509 }, { car: 27, lap: 28, time: 69.9255 },
+        { car: 27, lap: 29, time: 69.9156 }, { car: 27, lap: 30, time: 69.5420 },
+        { car: 27, lap: 31, time: 69.6281 }, { car: 27, lap: 32, time: 70.0522 },
+        { car: 27, lap: 33, time: 69.6424 }, { car: 27, lap: 34, time: 69.7701 },
+        { car: 27, lap: 35, time: 69.6816 }, { car: 27, lap: 36, time: 69.7517 },
+        { car: 27, lap: 37, time: 69.9941 }, { car: 27, lap: 38, time: 69.9202 },
+        { car: 27, lap: 39, time: 69.8607 }, { car: 27, lap: 40, time: 69.8661 },
+        { car: 27, lap: 41, time: 70.0106 }, { car: 27, lap: 42, time: 80.9209 },
+        { car: 27, lap: 43, time: 88.7166 }, { car: 27, lap: 44, time: 70.3742 },
+        { car: 27, lap: 45, time: 69.8631 }, { car: 27, lap: 46, time: 69.8677 },
+        { car: 27, lap: 47, time: 69.9056 }, { car: 27, lap: 48, time: 69.8606 },
+        { car: 27, lap: 49, time: 70.0578 }, { car: 27, lap: 50, time: 69.8568 },
+        { car: 27, lap: 51, time: 69.7746 }, { car: 27, lap: 52, time: 69.9016 },
+        { car: 27, lap: 53, time: 69.7841 }, { car: 27, lap: 54, time: 69.7917 },
+        { car: 27, lap: 55, time: 69.9897 }, { car: 27, lap: 56, time: 69.9785 },
+        { car: 27, lap: 57, time: 69.8489 }, { car: 27, lap: 58, time: 70.1088 },
+        { car: 27, lap: 59, time: 69.7170 }, { car: 27, lap: 60, time: 69.8323 },
+        { car: 27, lap: 61, time: 69.8698 }, { car: 27, lap: 62, time: 69.8614 },
+        { car: 27, lap: 63, time: 69.9592 }, { car: 27, lap: 64, time: 69.5755 },
+        { car: 27, lap: 65, time: 69.7317 }, { car: 27, lap: 66, time: 69.4371 },
+        { car: 27, lap: 67, time: 69.3586 }, { car: 27, lap: 68, time: 82.0246 },
+        { car: 27, lap: 69, time: 88.5573 }, { car: 27, lap: 70, time: 70.7561 },
+        { car: 27, lap: 71, time: 70.4339 }, { car: 27, lap: 72, time: 70.1166 },
+        { car: 27, lap: 73, time: 70.1987 }, { car: 27, lap: 74, time: 70.0530 },
+        { car: 27, lap: 75, time: 69.9047 }, { car: 27, lap: 76, time: 70.0330 },
+        { car: 27, lap: 77, time: 69.9615 }, { car: 27, lap: 78, time: 70.0733 },
+        { car: 27, lap: 79, time: 69.9676 }, { car: 27, lap: 80, time: 69.9715 },
+        { car: 27, lap: 81, time: 70.0953 }, { car: 27, lap: 82, time: 70.2358 },
+        { car: 27, lap: 83, time: 70.1550 }, { car: 27, lap: 84, time: 70.0726 },
+        { car: 27, lap: 85, time: 70.1590 }, { car: 27, lap: 86, time: 70.0910 },
+        { car: 27, lap: 87, time: 70.0208 }, { car: 27, lap: 88, time: 70.1176 },
+        { car: 27, lap: 89, time: 70.0774 }, { car: 27, lap: 90, time: 70.7038 },
+        { car: 27, lap: 91, time: 70.7038 }, { car: 28, lap: 1, time: 73.9824 },
+        { car: 28, lap: 2, time: 69.7572 }, { car: 28, lap: 3, time: 69.5150 },
+        { car: 28, lap: 4, time: 69.2695 }, { car: 28, lap: 5, time: 70.1920 },
+        { car: 28, lap: 6, time: 69.5145 }, { car: 28, lap: 7, time: 69.5481 },
+        { car: 28, lap: 8, time: 69.3701 }, { car: 28, lap: 9, time: 69.6468 },
+        { car: 28, lap: 10, time: 70.5137 }, { car: 28, lap: 11, time: 70.4664 },
+        { car: 28, lap: 12, time: 70.0806 }, { car: 28, lap: 13, time: 80.8981 },
+        { car: 28, lap: 14, time: 86.1528 }, { car: 28, lap: 15, time: 68.7184 },
+        { car: 28, lap: 16, time: 69.0538 }, { car: 28, lap: 17, time: 69.5432 },
+        { car: 28, lap: 18, time: 69.4359 }, { car: 28, lap: 19, time: 69.4738 },
+        { car: 28, lap: 20, time: 69.5791 }, { car: 28, lap: 21, time: 69.8468 },
+        { car: 28, lap: 22, time: 69.6186 }, { car: 28, lap: 23, time: 69.5129 },
+        { car: 28, lap: 24, time: 69.7403 }, { car: 28, lap: 25, time: 69.8119 },
+        { car: 28, lap: 26, time: 69.7377 }, { car: 28, lap: 27, time: 69.6786 },
+        { car: 28, lap: 28, time: 69.9031 }, { car: 28, lap: 29, time: 69.8132 },
+        { car: 28, lap: 30, time: 69.9166 }, { car: 28, lap: 31, time: 69.8674 },
+        { car: 28, lap: 32, time: 70.0643 }, { car: 28, lap: 33, time: 70.2454 },
+        { car: 28, lap: 34, time: 70.6382 }, { car: 28, lap: 35, time: 70.4402 },
+        { car: 28, lap: 36, time: 81.4820 }, { car: 28, lap: 37, time: 87.1721 },
+        { car: 28, lap: 38, time: 69.9599 }, { car: 28, lap: 39, time: 70.0735 },
+        { car: 28, lap: 40, time: 70.0735 }, { car: 28, lap: 41, time: 70.3881 },
+        { car: 28, lap: 42, time: 70.3259 }, { car: 28, lap: 43, time: 70.1980 },
+        { car: 28, lap: 44, time: 69.8360 }, { car: 28, lap: 45, time: 70.3590 },
+        { car: 28, lap: 46, time: 70.1557 }, { car: 28, lap: 47, time: 69.8666 },
+        { car: 28, lap: 48, time: 70.4204 }, { car: 28, lap: 49, time: 70.4432 },
+        { car: 28, lap: 50, time: 70.3225 }, { car: 28, lap: 51, time: 70.3360 },
+        { car: 28, lap: 52, time: 70.5906 }, { car: 28, lap: 53, time: 70.2773 },
+        { car: 28, lap: 54, time: 70.2699 }, { car: 28, lap: 55, time: 70.1121 },
+        { car: 28, lap: 56, time: 70.0979 }, { car: 28, lap: 57, time: 70.0720 },
+        { car: 28, lap: 58, time: 70.1695 }, { car: 28, lap: 59, time: 70.2149 },
+        { car: 28, lap: 60, time: 70.1911 }, { car: 28, lap: 61, time: 70.1705 },
+        { car: 28, lap: 62, time: 70.5160 }, { car: 28, lap: 63, time: 81.6947 },
+        { car: 28, lap: 64, time: 89.2289 }, { car: 28, lap: 65, time: 71.0874 },
+        { car: 28, lap: 66, time: 70.5241 }, { car: 28, lap: 67, time: 69.8087 },
+        { car: 28, lap: 68, time: 69.9913 }, { car: 28, lap: 69, time: 72.2567 },
+        { car: 28, lap: 70, time: 70.9319 }, { car: 28, lap: 71, time: 70.8969 },
+        { car: 28, lap: 72, time: 70.3514 }, { car: 28, lap: 73, time: 70.1585 },
+        { car: 28, lap: 74, time: 70.3181 }, { car: 28, lap: 75, time: 70.1407 },
+        { car: 28, lap: 76, time: 70.1327 }, { car: 28, lap: 77, time: 70.4886 },
+        { car: 28, lap: 78, time: 70.4419 }, { car: 28, lap: 79, time: 70.0393 },
+        { car: 28, lap: 80, time: 70.4976 }, { car: 28, lap: 81, time: 70.4695 },
+        { car: 28, lap: 82, time: 70.3920 }, { car: 28, lap: 83, time: 70.5393 },
+        { car: 28, lap: 84, time: 70.2572 }, { car: 28, lap: 85, time: 70.7088 },
+        { car: 28, lap: 86, time: 70.4087 }, { car: 28, lap: 87, time: 70.6384 },
+        { car: 28, lap: 88, time: 70.3588 }, { car: 28, lap: 89, time: 70.1040 },
+        { car: 28, lap: 90, time: 70.5831 }, { car: 28, lap: 91, time: 70.5831 },
+        { car: 45, lap: 1, time: 77.4623 }, { car: 45, lap: 2, time: 71.8668 },
+        { car: 45, lap: 3, time: 70.7125 }, { car: 45, lap: 4, time: 70.5690 },
+        { car: 45, lap: 5, time: 70.6178 }, { car: 45, lap: 6, time: 70.5774 },
+        { car: 45, lap: 7, time: 70.4867 }, { car: 45, lap: 8, time: 70.4116 },
+        { car: 45, lap: 9, time: 70.6904 }, { car: 45, lap: 10, time: 70.6913 },
+        { car: 45, lap: 11, time: 70.5256 }, { car: 45, lap: 12, time: 70.6092 },
+        { car: 45, lap: 13, time: 90.6260 }, { car: 45, lap: 14, time: 77.9888 },
+        { car: 45, lap: 15, time: 69.9479 }, { car: 45, lap: 16, time: 69.6540 },
+        { car: 45, lap: 17, time: 69.3301 }, { car: 45, lap: 18, time: 69.6791 },
+        { car: 45, lap: 19, time: 69.4184 }, { car: 45, lap: 20, time: 69.6572 },
+        { car: 45, lap: 21, time: 69.9532 }, { car: 45, lap: 22, time: 69.9250 },
+        { car: 45, lap: 23, time: 70.2405 }, { car: 45, lap: 24, time: 71.1656 },
+        { car: 45, lap: 25, time: 70.8651 }, { car: 45, lap: 26, time: 70.3736 },
+        { car: 45, lap: 27, time: 70.4225 }, { car: 45, lap: 28, time: 70.6342 },
+        { car: 45, lap: 29, time: 90.7784 }, { car: 45, lap: 30, time: 79.2214 },
+        { car: 45, lap: 31, time: 71.7749 }, { car: 45, lap: 32, time: 70.3217 },
+        { car: 45, lap: 33, time: 70.1305 }, { car: 45, lap: 34, time: 69.8294 },
+        { car: 45, lap: 35, time: 70.9427 }, { car: 45, lap: 36, time: 70.5494 },
+        { car: 45, lap: 37, time: 69.8993 }, { car: 45, lap: 38, time: 70.4049 },
+        { car: 45, lap: 39, time: 70.4464 }, { car: 45, lap: 40, time: 72.1536 },
+        { car: 45, lap: 41, time: 71.5198 }, { car: 45, lap: 42, time: 70.8945 },
+        { car: 45, lap: 43, time: 70.8181 }, { car: 45, lap: 44, time: 70.5343 },
+        { car: 45, lap: 45, time: 70.3479 }, { car: 45, lap: 46, time: 70.4820 },
+        { car: 45, lap: 47, time: 70.3975 }, { car: 45, lap: 48, time: 70.2777 },
+        { car: 45, lap: 49, time: 70.3828 }, { car: 45, lap: 50, time: 70.3980 },
+        { car: 45, lap: 51, time: 70.6368 }, { car: 45, lap: 52, time: 70.6793 },
+        { car: 45, lap: 53, time: 70.4899 }, { car: 45, lap: 54, time: 70.4650 },
+        { car: 45, lap: 55, time: 91.6745 }, { car: 45, lap: 56, time: 79.0222 },
+        { car: 45, lap: 57, time: 70.7813 }, { car: 45, lap: 58, time: 70.4001 },
+        { car: 45, lap: 59, time: 70.1140 }, { car: 45, lap: 60, time: 70.3296 },
+        { car: 45, lap: 61, time: 70.3720 }, { car: 45, lap: 62, time: 70.5098 },
+        { car: 45, lap: 63, time: 70.4138 }, { car: 45, lap: 64, time: 70.3461 },
+        { car: 45, lap: 65, time: 71.3092 }, { car: 45, lap: 66, time: 70.5954 },
+        { car: 45, lap: 67, time: 71.0923 }, { car: 45, lap: 68, time: 70.9195 },
+        { car: 45, lap: 69, time: 70.0905 }, { car: 45, lap: 70, time: 70.4507 },
+        { car: 45, lap: 71, time: 70.4878 }, { car: 45, lap: 72, time: 70.5541 },
+        { car: 45, lap: 73, time: 90.7610 }, { car: 45, lap: 74, time: 78.6890 },
+        { car: 45, lap: 75, time: 70.4430 }, { car: 45, lap: 76, time: 70.1436 },
+        { car: 45, lap: 77, time: 70.4573 }, { car: 45, lap: 78, time: 70.4436 },
+        { car: 45, lap: 79, time: 70.2985 }, { car: 45, lap: 80, time: 70.1720 },
+        { car: 45, lap: 81, time: 70.0798 }, { car: 45, lap: 82, time: 70.0997 },
+        { car: 45, lap: 83, time: 70.1443 }, { car: 45, lap: 84, time: 70.0045 },
+        { car: 45, lap: 85, time: 69.4016 }, { car: 45, lap: 86, time: 70.3842 },
+        { car: 45, lap: 87, time: 70.9426 }, { car: 45, lap: 88, time: 70.5142 },
+        { car: 45, lap: 89, time: 70.8812 }, { car: 45, lap: 90, time: 70.8812 },
+        { car: 47, lap: 1, time: 76.2153 }, { car: 47, lap: 2, time: 71.1808 },
+        { car: 47, lap: 3, time: 70.5844 }, { car: 47, lap: 4, time: 70.4737 },
+        { car: 47, lap: 5, time: 70.4799 }, { car: 47, lap: 6, time: 70.5560 },
+        { car: 47, lap: 7, time: 70.1663 }, { car: 47, lap: 8, time: 70.1810 },
+        { car: 47, lap: 9, time: 70.4553 }, { car: 47, lap: 10, time: 70.4126 },
+        { car: 47, lap: 11, time: 70.3034 }, { car: 47, lap: 12, time: 70.4699 },
+        { car: 47, lap: 13, time: 70.0943 }, { car: 47, lap: 14, time: 90.1133 },
+        { car: 47, lap: 15, time: 77.6836 }, { car: 47, lap: 16, time: 69.4320 },
+        { car: 47, lap: 17, time: 69.8126 }, { car: 47, lap: 18, time: 69.7894 },
+        { car: 47, lap: 19, time: 69.7072 }, { car: 47, lap: 20, time: 70.4284 },
+        { car: 47, lap: 21, time: 69.6969 }, { car: 47, lap: 22, time: 69.7743 },
+        { car: 47, lap: 23, time: 69.7605 }, { car: 47, lap: 24, time: 69.3515 },
+        { car: 47, lap: 25, time: 69.9104 }, { car: 47, lap: 26, time: 70.6464 },
+        { car: 47, lap: 27, time: 70.4729 }, { car: 47, lap: 28, time: 70.8027 },
+        { car: 47, lap: 29, time: 70.3702 }, { car: 47, lap: 30, time: 70.1870 },
+        { car: 47, lap: 31, time: 70.3378 }, { car: 47, lap: 32, time: 70.1153 },
+        { car: 47, lap: 33, time: 70.3443 }, { car: 47, lap: 34, time: 70.5835 },
+        { car: 47, lap: 35, time: 70.9785 }, { car: 47, lap: 36, time: 72.0870 },
+        { car: 47, lap: 37, time: 97.3001 }, { car: 47, lap: 38, time: 79.5542 },
+        { car: 47, lap: 39, time: 70.6496 }, { car: 47, lap: 40, time: 70.6469 },
+        { car: 47, lap: 41, time: 71.7622 }, { car: 47, lap: 42, time: 70.7450 },
+        { car: 47, lap: 43, time: 70.9852 }, { car: 47, lap: 44, time: 70.4209 },
+        { car: 47, lap: 45, time: 70.5855 }, { car: 47, lap: 46, time: 70.5322 },
+        { car: 47, lap: 47, time: 70.5775 }, { car: 47, lap: 48, time: 70.3996 },
+        { car: 47, lap: 49, time: 70.2201 }, { car: 47, lap: 50, time: 70.2525 },
+        { car: 47, lap: 51, time: 70.5215 }, { car: 47, lap: 52, time: 70.9647 },
+        { car: 47, lap: 53, time: 70.7438 }, { car: 47, lap: 54, time: 70.4058 },
+        { car: 47, lap: 55, time: 70.6221 }, { car: 47, lap: 56, time: 69.7561 },
+        { car: 47, lap: 57, time: 69.7622 }, { car: 47, lap: 58, time: 69.8576 },
+        { car: 47, lap: 59, time: 70.1557 }, { car: 47, lap: 60, time: 70.0142 },
+        { car: 47, lap: 61, time: 70.4563 }, { car: 47, lap: 62, time: 70.8330 },
+        { car: 47, lap: 63, time: 71.0066 }, { car: 47, lap: 64, time: 92.7279 },
+        { car: 47, lap: 65, time: 80.3286 }, { car: 47, lap: 66, time: 70.7041 },
+        { car: 47, lap: 67, time: 70.9220 }, { car: 47, lap: 68, time: 70.5071 },
+        { car: 47, lap: 69, time: 70.2932 }, { car: 47, lap: 70, time: 70.3610 },
+        { car: 47, lap: 71, time: 70.2314 }, { car: 47, lap: 72, time: 70.5249 },
+        { car: 47, lap: 73, time: 70.5625 }, { car: 47, lap: 74, time: 69.9622 },
+        { car: 47, lap: 75, time: 69.9973 }, { car: 47, lap: 76, time: 70.0154 },
+        { car: 47, lap: 77, time: 69.8457 }, { car: 47, lap: 78, time: 69.9900 },
+        { car: 47, lap: 79, time: 70.4487 }, { car: 47, lap: 80, time: 70.3224 },
+        { car: 47, lap: 81, time: 70.5129 }, { car: 47, lap: 82, time: 70.5744 },
+        { car: 47, lap: 83, time: 70.7204 }, { car: 47, lap: 84, time: 70.5699 },
+        { car: 47, lap: 85, time: 70.8616 }, { car: 47, lap: 86, time: 71.0992 },
+        { car: 47, lap: 87, time: 71.0424 }, { car: 47, lap: 88, time: 70.7173 },
+        { car: 47, lap: 89, time: 71.3833 }, { car: 47, lap: 90, time: 71.3833 },
+        { car: 60, lap: 1, time: 75.6625 }, { car: 60, lap: 2, time: 71.1005 },
+        { car: 60, lap: 3, time: 70.6193 }, { car: 60, lap: 4, time: 70.2577 },
+        { car: 60, lap: 5, time: 70.3556 }, { car: 60, lap: 6, time: 70.1877 },
+        { car: 60, lap: 7, time: 70.1559 }, { car: 60, lap: 8, time: 70.0914 },
+        { car: 60, lap: 9, time: 70.1648 }, { car: 60, lap: 10, time: 70.5524 },
+        { car: 60, lap: 11, time: 70.0980 }, { car: 60, lap: 12, time: 70.0228 },
+        { car: 60, lap: 13, time: 70.1928 }, { car: 60, lap: 14, time: 70.0195 },
+        { car: 60, lap: 15, time: 69.8820 }, { car: 60, lap: 16, time: 81.0724 },
+        { car: 60, lap: 17, time: 87.2799 }, { car: 60, lap: 18, time: 70.2621 },
+        { car: 60, lap: 19, time: 69.6466 }, { car: 60, lap: 20, time: 69.9617 },
+        { car: 60, lap: 21, time: 69.5508 }, { car: 60, lap: 22, time: 69.4533 },
+        { car: 60, lap: 23, time: 69.5007 }, { car: 60, lap: 24, time: 69.7213 },
+        { car: 60, lap: 25, time: 70.0217 }, { car: 60, lap: 26, time: 69.7485 },
+        { car: 60, lap: 27, time: 69.7823 }, { car: 60, lap: 28, time: 70.0270 },
+        { car: 60, lap: 29, time: 69.8106 }, { car: 60, lap: 30, time: 70.1612 },
+        { car: 60, lap: 31, time: 70.0719 }, { car: 60, lap: 32, time: 70.1144 },
+        { car: 60, lap: 33, time: 70.8246 }, { car: 60, lap: 34, time: 70.3822 },
+        { car: 60, lap: 35, time: 70.3730 }, { car: 60, lap: 36, time: 70.2690 },
+        { car: 60, lap: 37, time: 70.1255 }, { car: 60, lap: 38, time: 69.9143 },
+        { car: 60, lap: 39, time: 69.9340 }, { car: 60, lap: 40, time: 69.9362 },
+        { car: 60, lap: 41, time: 70.0595 }, { car: 60, lap: 42, time: 81.0661 },
+        { car: 60, lap: 43, time: 87.4678 }, { car: 60, lap: 44, time: 70.4135 },
+        { car: 60, lap: 45, time: 69.9349 }, { car: 60, lap: 46, time: 69.6896 },
+        { car: 60, lap: 47, time: 69.6212 }, { car: 60, lap: 48, time: 69.8902 },
+        { car: 60, lap: 49, time: 70.5733 }, { car: 60, lap: 50, time: 70.9194 },
+        { car: 60, lap: 51, time: 70.8655 }, { car: 60, lap: 52, time: 70.5978 },
+        { car: 60, lap: 53, time: 70.2678 }, { car: 60, lap: 54, time: 70.0471 },
+        { car: 60, lap: 55, time: 70.4030 }, { car: 60, lap: 56, time: 70.4460 },
+        { car: 60, lap: 57, time: 70.1878 }, { car: 60, lap: 58, time: 70.2453 },
+        { car: 60, lap: 59, time: 70.4883 }, { car: 60, lap: 60, time: 70.0586 },
+        { car: 60, lap: 61, time: 69.9845 }, { car: 60, lap: 62, time: 70.4213 },
+        { car: 60, lap: 63, time: 70.2633 }, { car: 60, lap: 64, time: 70.2675 },
+        { car: 60, lap: 65, time: 70.3945 }, { car: 60, lap: 66, time: 70.9022 },
+        { car: 60, lap: 67, time: 69.8523 }, { car: 60, lap: 68, time: 81.1073 },
+        { car: 60, lap: 69, time: 87.1434 }, { car: 60, lap: 70, time: 70.6515 },
+        { car: 60, lap: 71, time: 70.4710 }, { car: 60, lap: 72, time: 70.0361 },
+        { car: 60, lap: 73, time: 70.1653 }, { car: 60, lap: 74, time: 69.8722 },
+        { car: 60, lap: 75, time: 70.2240 }, { car: 60, lap: 76, time: 70.3008 },
+        { car: 60, lap: 77, time: 70.5115 }, { car: 60, lap: 78, time: 70.2364 },
+        { car: 60, lap: 79, time: 70.5227 }, { car: 60, lap: 80, time: 70.3829 },
+        { car: 60, lap: 81, time: 70.5654 }, { car: 60, lap: 82, time: 70.7366 },
+        { car: 60, lap: 83, time: 70.8613 }, { car: 60, lap: 84, time: 70.8320 },
+        { car: 60, lap: 85, time: 70.8102 }, { car: 60, lap: 86, time: 70.6734 },
+        { car: 60, lap: 87, time: 70.4944 }, { car: 60, lap: 88, time: 70.6180 },
+        { car: 60, lap: 89, time: 70.4079 }, { car: 60, lap: 90, time: 70.5111 },
+        { car: 60, lap: 91, time: 70.5111 }, { car: 66, lap: 1, time: 72.5975 },
+        { car: 66, lap: 2, time: 69.7706 }, { car: 66, lap: 3, time: 69.3071 },
+        { car: 66, lap: 4, time: 69.1067 }, { car: 66, lap: 5, time: 69.2332 },
+        { car: 66, lap: 6, time: 69.1679 }, { car: 66, lap: 7, time: 69.2061 },
+        { car: 66, lap: 8, time: 69.3571 }, { car: 66, lap: 9, time: 69.4036 },
+        { car: 66, lap: 10, time: 69.4507 }, { car: 66, lap: 11, time: 69.6725 },
+        { car: 66, lap: 12, time: 69.8431 }, { car: 66, lap: 13, time: 69.9990 },
+        { car: 66, lap: 14, time: 70.5970 }, { car: 66, lap: 15, time: 91.1745 },
+        { car: 66, lap: 16, time: 77.0953 }, { car: 66, lap: 17, time: 69.3951 },
+        { car: 66, lap: 18, time: 68.7133 }, { car: 66, lap: 19, time: 69.2144 },
+        { car: 66, lap: 20, time: 69.3214 }, { car: 66, lap: 21, time: 69.3813 },
+        { car: 66, lap: 22, time: 69.5237 }, { car: 66, lap: 23, time: 69.6621 },
+        { car: 66, lap: 24, time: 69.6217 }, { car: 66, lap: 25, time: 70.0064 },
+        { car: 66, lap: 26, time: 69.5961 }, { car: 66, lap: 27, time: 69.7174 },
+        { car: 66, lap: 28, time: 70.0654 }, { car: 66, lap: 29, time: 69.9096 },
+        { car: 66, lap: 30, time: 69.8947 }, { car: 66, lap: 31, time: 69.6863 },
+        { car: 66, lap: 32, time: 69.9642 }, { car: 66, lap: 33, time: 69.8424 },
+        { car: 66, lap: 34, time: 69.8104 }, { car: 66, lap: 35, time: 69.6509 },
+        { car: 66, lap: 36, time: 69.7646 }, { car: 66, lap: 37, time: 69.7620 },
+        { car: 66, lap: 38, time: 69.8479 }, { car: 66, lap: 39, time: 69.8939 },
+        { car: 66, lap: 40, time: 69.9540 }, { car: 66, lap: 41, time: 70.1237 },
+        { car: 66, lap: 42, time: 92.8822 }, { car: 66, lap: 43, time: 77.7329 },
+        { car: 66, lap: 44, time: 70.2684 }, { car: 66, lap: 45, time: 69.8558 },
+        { car: 66, lap: 46, time: 69.7219 }, { car: 66, lap: 47, time: 69.8295 },
+        { car: 66, lap: 48, time: 69.9008 }, { car: 66, lap: 49, time: 69.9077 },
+        { car: 66, lap: 50, time: 69.9660 }, { car: 66, lap: 51, time: 70.1586 },
+        { car: 66, lap: 52, time: 70.0429 }, { car: 66, lap: 53, time: 70.1475 },
+        { car: 66, lap: 54, time: 70.0060 }, { car: 66, lap: 55, time: 70.0252 },
+        { car: 66, lap: 56, time: 69.9067 }, { car: 66, lap: 57, time: 69.9262 },
+        { car: 66, lap: 58, time: 69.9669 }, { car: 66, lap: 59, time: 69.9674 },
+        { car: 66, lap: 60, time: 70.0868 }, { car: 66, lap: 61, time: 69.7783 },
+        { car: 66, lap: 62, time: 69.9383 }, { car: 66, lap: 63, time: 70.0559 },
+        { car: 66, lap: 64, time: 70.2629 }, { car: 66, lap: 65, time: 70.3515 },
+        { car: 66, lap: 66, time: 70.0985 }, { car: 66, lap: 67, time: 70.2043 },
+        { car: 66, lap: 68, time: 70.4263 }, { car: 66, lap: 69, time: 92.5158 },
+        { car: 66, lap: 70, time: 77.4039 }, { car: 66, lap: 71, time: 69.8822 },
+        { car: 66, lap: 72, time: 69.6907 }, { car: 66, lap: 73, time: 69.7504 },
+        { car: 66, lap: 74, time: 69.8382 }, { car: 66, lap: 75, time: 69.6319 },
+        { car: 66, lap: 76, time: 70.0353 }, { car: 66, lap: 77, time: 70.2630 },
+        { car: 66, lap: 78, time: 70.0698 }, { car: 66, lap: 79, time: 69.4086 },
+        { car: 66, lap: 80, time: 69.9415 }, { car: 66, lap: 81, time: 70.0722 },
+        { car: 66, lap: 82, time: 69.9083 }, { car: 66, lap: 83, time: 70.0360 },
+        { car: 66, lap: 84, time: 69.9936 }, { car: 66, lap: 85, time: 70.0757 },
+        { car: 66, lap: 86, time: 70.0047 }, { car: 66, lap: 87, time: 69.9376 },
+        { car: 66, lap: 88, time: 70.0845 }, { car: 66, lap: 89, time: 70.1641 },
+        { car: 66, lap: 90, time: 70.8535 }, { car: 66, lap: 91, time: 70.8535 },
+        { car: 76, lap: 1, time: 75.4537 }, { car: 76, lap: 2, time: 71.1659 },
+        { car: 76, lap: 3, time: 70.6534 }, { car: 76, lap: 4, time: 70.1944 },
+        { car: 76, lap: 5, time: 70.4022 }, { car: 76, lap: 6, time: 70.1755 },
+        { car: 76, lap: 7, time: 70.0761 }, { car: 76, lap: 8, time: 70.0377 },
+        { car: 76, lap: 9, time: 69.9367 }, { car: 76, lap: 10, time: 69.7900 },
+        { car: 76, lap: 11, time: 70.0141 }, { car: 76, lap: 12, time: 69.9170 },
+        { car: 76, lap: 13, time: 69.8497 }, { car: 76, lap: 14, time: 69.8909 },
+        { car: 76, lap: 15, time: 69.1058 }, { car: 76, lap: 16, time: 69.4851 },
+        { car: 76, lap: 17, time: 69.5336 }, { car: 76, lap: 18, time: 70.1025 },
+        { car: 76, lap: 19, time: 68.7713 }, { car: 76, lap: 20, time: 69.1471 },
+        { car: 76, lap: 21, time: 69.0212 }, { car: 76, lap: 22, time: 69.1202 },
+        { car: 76, lap: 23, time: 89.9101 }, { car: 76, lap: 24, time: 78.9342 },
+        { car: 76, lap: 25, time: 71.0156 }, { car: 76, lap: 26, time: 70.6370 },
+        { car: 76, lap: 27, time: 70.1628 }, { car: 76, lap: 28, time: 70.4477 },
+        { car: 76, lap: 29, time: 70.0395 }, { car: 76, lap: 30, time: 70.0972 },
+        { car: 76, lap: 31, time: 70.1256 }, { car: 76, lap: 32, time: 69.8428 },
+        { car: 76, lap: 33, time: 69.8560 }, { car: 76, lap: 34, time: 69.6866 },
+        { car: 76, lap: 35, time: 78.4679 }, { car: 76, lap: 36, time: 70.0685 },
+        { car: 76, lap: 37, time: 69.8228 }, { car: 76, lap: 38, time: 69.7692 },
+        { car: 76, lap: 39, time: 70.0901 }, { car: 76, lap: 40, time: 69.8574 },
+        { car: 76, lap: 41, time: 69.8445 }, { car: 76, lap: 42, time: 69.3486 },
+        { car: 76, lap: 43, time: 69.0193 }, { car: 76, lap: 44, time: 69.4047 },
+        { car: 76, lap: 45, time: 69.2364 }, { car: 76, lap: 46, time: 69.5537 },
+        { car: 76, lap: 47, time: 69.8060 }, { car: 76, lap: 48, time: 90.1162 },
+        { car: 76, lap: 49, time: 78.5158 }, { car: 76, lap: 50, time: 70.7905 },
+        { car: 76, lap: 51, time: 70.4210 }, { car: 76, lap: 52, time: 70.1607 },
+        { car: 76, lap: 53, time: 70.2650 }, { car: 76, lap: 54, time: 70.3646 },
+        { car: 76, lap: 55, time: 70.2791 }, { car: 76, lap: 56, time: 70.1702 },
+        { car: 76, lap: 57, time: 70.1856 }, { car: 76, lap: 58, time: 70.2648 },
+        { car: 76, lap: 59, time: 70.2100 }, { car: 76, lap: 60, time: 69.8262 },
+        { car: 76, lap: 61, time: 69.9011 }, { car: 76, lap: 62, time: 70.5791 },
+        { car: 76, lap: 63, time: 70.4917 }, { car: 76, lap: 64, time: 70.5824 },
+        { car: 76, lap: 65, time: 70.6875 }, { car: 76, lap: 66, time: 91.3333 },
+        { car: 76, lap: 67, time: 78.2907 }, { car: 76, lap: 68, time: 70.2340 },
+        { car: 76, lap: 69, time: 71.3755 }, { car: 76, lap: 70, time: 70.6051 },
+        { car: 76, lap: 71, time: 70.1508 }, { car: 76, lap: 72, time: 70.2922 },
+        { car: 76, lap: 73, time: 70.0913 }, { car: 76, lap: 74, time: 70.1351 },
+        { car: 76, lap: 75, time: 70.0037 }, { car: 76, lap: 76, time: 70.1160 },
+        { car: 76, lap: 77, time: 70.4878 }, { car: 76, lap: 78, time: 70.3447 },
+        { car: 76, lap: 79, time: 70.5852 }, { car: 76, lap: 80, time: 70.5344 },
+        { car: 76, lap: 81, time: 70.3490 }, { car: 76, lap: 82, time: 70.4828 },
+        { car: 76, lap: 83, time: 70.9499 }, { car: 76, lap: 84, time: 70.8357 },
+        { car: 76, lap: 85, time: 70.9502 }, { car: 76, lap: 86, time: 70.8684 },
+        { car: 76, lap: 87, time: 70.5396 }, { car: 76, lap: 88, time: 70.3396 },
+        { car: 76, lap: 89, time: 70.4964 }, { car: 76, lap: 90, time: 70.2937 },
+        { car: 76, lap: 91, time: 70.2937 }, { car: 77, lap: 1, time: 77.7381 },
+        { car: 77, lap: 2, time: 71.7619 }, { car: 77, lap: 3, time: 70.7752 },
+        { car: 77, lap: 4, time: 70.6566 }, { car: 77, lap: 5, time: 70.6515 },
+        { car: 77, lap: 6, time: 70.6147 }, { car: 77, lap: 7, time: 70.5525 },
+        { car: 77, lap: 8, time: 70.4004 }, { car: 77, lap: 9, time: 70.7219 },
+        { car: 77, lap: 10, time: 70.5741 }, { car: 77, lap: 11, time: 70.6090 },
+        { car: 77, lap: 12, time: 70.5707 }, { car: 77, lap: 13, time: 70.0721 },
+        { car: 77, lap: 14, time: 90.8202 }, { car: 77, lap: 15, time: 78.6272 },
+        { car: 77, lap: 16, time: 70.1996 }, { car: 77, lap: 17, time: 69.4990 },
+        { car: 77, lap: 18, time: 69.7501 }, { car: 77, lap: 19, time: 69.6820 },
+        { car: 77, lap: 20, time: 69.7882 }, { car: 77, lap: 21, time: 69.6553 },
+        { car: 77, lap: 22, time: 69.9398 }, { car: 77, lap: 23, time: 70.0722 },
+        { car: 77, lap: 24, time: 70.0606 }, { car: 77, lap: 25, time: 71.8676 },
+        { car: 77, lap: 26, time: 70.7465 }, { car: 77, lap: 27, time: 70.4084 },
+        { car: 77, lap: 28, time: 70.2149 }, { car: 77, lap: 29, time: 70.2498 },
+        { car: 77, lap: 30, time: 70.1559 }, { car: 77, lap: 31, time: 70.0628 },
+        { car: 77, lap: 32, time: 69.8773 }, { car: 77, lap: 33, time: 70.0949 },
+        { car: 77, lap: 34, time: 70.3227 }, { car: 77, lap: 35, time: 70.4944 },
+        { car: 77, lap: 36, time: 70.5508 }, { car: 77, lap: 37, time: 70.4369 },
+        { car: 77, lap: 38, time: 70.5319 }, { car: 77, lap: 39, time: 91.5178 },
+        { car: 77, lap: 40, time: 79.5953 }, { car: 77, lap: 41, time: 71.0671 },
+        { car: 77, lap: 42, time: 70.4104 }, { car: 77, lap: 43, time: 70.4460 },
+        { car: 77, lap: 44, time: 70.3727 }, { car: 77, lap: 45, time: 70.2983 },
+        { car: 77, lap: 46, time: 70.0880 }, { car: 77, lap: 47, time: 70.1328 },
+        { car: 77, lap: 48, time: 70.4500 }, { car: 77, lap: 49, time: 70.3282 },
+        { car: 77, lap: 50, time: 70.3282 }, { car: 77, lap: 51, time: 70.5045 },
+        { car: 77, lap: 52, time: 70.3777 }, { car: 77, lap: 53, time: 70.3123 },
+        { car: 77, lap: 54, time: 70.2545 }, { car: 77, lap: 55, time: 70.2117 },
+        { car: 77, lap: 56, time: 70.3927 }, { car: 77, lap: 57, time: 70.1626 },
+        { car: 77, lap: 58, time: 70.3913 }, { car: 77, lap: 59, time: 70.2446 },
+        { car: 77, lap: 60, time: 70.1146 }, { car: 77, lap: 61, time: 70.3528 },
+        { car: 77, lap: 62, time: 70.5239 }, { car: 77, lap: 63, time: 70.5092 },
+        { car: 77, lap: 64, time: 92.5353 }, { car: 77, lap: 65, time: 79.8858 },
+        { car: 77, lap: 66, time: 70.8442 }, { car: 77, lap: 67, time: 70.9813 },
+        { car: 77, lap: 68, time: 70.7115 }, { car: 77, lap: 69, time: 71.4381 },
+        { car: 77, lap: 70, time: 70.7882 }, { car: 77, lap: 71, time: 70.2325 },
+        { car: 77, lap: 72, time: 70.3961 }, { car: 77, lap: 73, time: 70.2649 },
+        { car: 77, lap: 74, time: 70.4176 }, { car: 77, lap: 75, time: 70.1915 },
+        { car: 77, lap: 76, time: 70.2269 }, { car: 77, lap: 77, time: 70.3358 },
+        { car: 77, lap: 78, time: 70.3361 }, { car: 77, lap: 79, time: 70.4760 },
+        { car: 77, lap: 80, time: 70.3448 }, { car: 77, lap: 81, time: 70.4331 },
+        { car: 77, lap: 82, time: 70.4869 }, { car: 77, lap: 83, time: 70.7257 },
+        { car: 77, lap: 84, time: 70.3835 }, { car: 77, lap: 85, time: 70.3201 },
+        { car: 77, lap: 86, time: 70.3721 }, { car: 77, lap: 87, time: 70.5823 },
+        { car: 77, lap: 88, time: 70.4903 }, { car: 77, lap: 89, time: 71.2071 },
+        { car: 77, lap: 90, time: 71.2071 }
+
+    ];
+
+    // Car Number -> Driver Name lookup (for legend labels)
+    const driverNames = {
+        2: "Josef Newgarden",
+        3: "Scott McLaughlin",
+        4: "Caio Collet (R)",
+        5: "Pato O'Ward",
+        6: "Nolan Siegel",
+        7: "Christian Lundgaard",
+        8: "Kyffin Simpson",
+        9: "Scott Dixon",
+        10: "Alex Palou",
+        12: "David Malukas",
+        14: "Santino Ferrucci",
+        15: "Graham Rahal",
+        18: "Romain Grosjean",
+        19: "Dennis Hauger (R)",
+        20: "Alexander Rossi",
+        21: "Christian Rasmussen",
+        26: "Will Power",
+        27: "Kyle Kirkwood",
+        28: "Marcus Ericsson",
+        45: "Louis Foster",
+        47: "Mick Schumacher (R)",
+        60: "Felix Rosenqvist",
+        66: "Marcus Armstrong",
+        76: "Rinus Veekay",
+        77: "Sting Ray Robb"
+    };
+
+    // Pit stop laps and full-course caution (yellow flag) laps both show up
+    // the same way in lap-time data: a lap (or a short run of laps) that's
+    // noticeably slower than the field's normal green-flag pace. Rather than
+    // a track-specific cutoff (some tracks run ~20s laps, others ~90s+), any
+    // lap more than 5% slower than the field's median lap is treated as one
+    // of these and filtered out. This scales automatically per track.
+    function filterRaceData(raceData) {
+        const afterLap1 = raceData.filter(d => d.lap > 1);
+        const median = d3.median(afterLap1, d => d.time);
+        const upperFence = median * 1.05;
+        return afterLap1.filter(d => d.time <= upperFence);
+    }
+
+    // FILTER OUT LAP 1, COOL DOWN LAP, PIT STOPS, and YELLOW FLAG OUTLIERS
+    const data = filterRaceData(rawData);
+
+    // Group the data by Car Number
+    const sumData = d3.group(data, d => d.car);
+
+    // Dimensions and Margins
+    const margin = { top: 40, right: 265, bottom: 50, left: 60 };
+    const width = 1600 - margin.left - margin.right;
+    const height = 800 - margin.top - margin.bottom;
+
+    // Append SVG container
+    const svg = d3.select("#chart")
+        .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+        .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Scales (Modified domains)
+    const xScale = d3.scaleLinear()
+        .domain([0, 90]) // Explicitly start X-axis domain at 0
+        .range([0, width]);
+
+    const yScale = d3.scaleLinear()
+        .domain([68, 73]) // Explicitly lock Y-axis domain to range 68 to 73
+        .range([height, 0]);
+
+    // Color Scale
+    // Rainbow interpolation still puts some hues (e.g. adjacent greens/cyans)
+    // too close together at 25+ samples. Instead, stitch together several
+    // hand-tuned categorical palettes (each internally designed for maximum
+    // contrast) so we get up to 27 genuinely distinct colors.
+    const carKeys = Array.from(sumData.keys());
+    const combinedPalette = [
+        ...d3.schemeTableau10,
+        ...d3.schemeDark2,
+        ...d3.schemeSet1
+    ];
+    const colorScale = d3.scaleOrdinal()
+        .domain(carKeys)
+        .range(combinedPalette.slice(0, carKeys.length));
+
+    // Dash Scale
+    // Even with distinct colors, some can still look similar at a glance
+    // (e.g. under color-vision deficiency, or on a small screen). To make
+    // every other line unmistakably distinct, alternate lines are dashed.
+    const dashPatterns = ["", "6,4"]; // solid, dashed
+    const dashScale = d3.scaleOrdinal()
+        .domain(carKeys)
+        .range(carKeys.map((_, i) => dashPatterns[i % 2]));
+
+    // Line Generator
+    const lineGenerator = d3.line()
+        .x(d => xScale(d.lap))
+        .y(d => yScale(d.time))
+        .curve(d3.curveMonotoneX);
+
+    // --- Dynamic tick generation ---
+    // Rather than a fixed tick list, we compute a "nice" step (1, 2, 5, 10...)
+    // for whatever domain is currently visible, then round to a minimum
+    // granularity so ticks never look duplicated or over-precise:
+    //   x-axis (laps): never finer than whole laps (minStep = 1)
+    //   y-axis (lap time): never finer than tenths of a second (minStep = 0.1)
+    function computeNiceStep(d0, d1, targetCount, minStep) {
+        let step = d3.tickStep(d0, d1, targetCount);
+        if (minStep !== undefined && step < minStep) step = minStep;
+        return step;
+    }
+
+    function computeTickValues(d0, d1, step) {
+        const start = Math.ceil(d0 / step) * step;
+        const epsilon = step / 1e6;
+        const values = [];
+        for (let v = start; v <= d1 + epsilon; v += step) {
+            values.push(Math.round(v / step) * step); // snap off floating-point drift
+        }
+        return values;
+    }
+
+    function decimalsForStep(step) {
+        if (step >= 1) return 0;
+        const s = step.toFixed(10).replace(/0+$/, "");
+        const idx = s.indexOf(".");
+        return idx === -1 ? 0 : s.length - idx - 1;
+    }
+
+    // Clip path so zoomed/panned content never spills outside the plot area
+    svg.append("defs").append("clipPath")
+        .attr("id", "plot-clip")
+        .append("rect")
+        .attr("width", width)
+        .attr("height", height);
+
+    const gridGroup = svg.append("g").attr("class", "grid");
+
+    const xAxisGroup = svg.append("g")
+        .attr("class", "x-axis-group")
+        .attr("transform", `translate(0,${height})`);
+
+    const yAxisGroup = svg.append("g")
+        .attr("class", "y-axis-group");
+
+    // Draws/updates the axes and gridlines for whatever x/y scales are
+    // currently in effect (called once for the initial view, then again on
+    // every zoom/pan event with the rescaled scales).
+    function renderAxes(currentX, currentY) {
+        const [x0, x1] = currentX.domain();
+        const [y0, y1] = currentY.domain();
+
+        const xStep = computeNiceStep(x0, x1, 12, 1);
+        const xTicks = computeTickValues(x0, x1, xStep);
+
+        const yStep = computeNiceStep(y0, y1, 6, 0.1);
+        const yTicks = computeTickValues(y0, y1, yStep);
+        const yDecimals = decimalsForStep(yStep);
+
+        xAxisGroup.call(
+            d3.axisBottom(currentX).tickValues(xTicks).tickFormat(d3.format("d"))
+        );
+        yAxisGroup.call(
+            d3.axisLeft(currentY).tickValues(yTicks).tickFormat(d3.format(`.${yDecimals}f`))
+        );
+        gridGroup.call(
+            d3.axisLeft(currentY).tickValues(yTicks).tickSize(-width).tickFormat("")
+        );
+    }
+
+    // Initial (un-zoomed) render
+    renderAxes(xScale, yScale);
+
+    // Labels
+    svg.append("text")
+        .attr("class", "axis-label")
+        .attr("text-anchor", "middle")
+        .attr("x", width / 2)
+        .attr("y", height + 40)
+        .text("Lap");
+
+    svg.append("text")
+        .attr("class", "axis-label")
+        .attr("text-anchor", "middle")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -height / 2)
+        .attr("y", -45)
+        .text("Lap Time (s)");
+    
+    // Group that holds the lines, clipped to the plot area so zooming/panning
+    // never draws outside the axes
+    const plotArea = svg.append("g")
+        .attr("clip-path", "url(#plot-clip)");
+
+    // Draw Multiple Lines
+    const linePaths = plotArea.selectAll(".line-path")
+        .data(Array.from(sumData.entries()))
+        .enter()
+        .append("path")
+        .attr("class", d => `line car-line car-line-${d[0]}`)
+        .attr("d", d => lineGenerator(d[1])) 
+        .attr("stroke", d => colorScale(d[0]))
+        .attr("stroke-dasharray", d => dashScale(d[0]));
+/*
+    // Add Interactive Data Points for all cars
+    svg.selectAll(".dot")
+        .data(data)
+        .enter()
+        .append("circle")
+        .attr("class", "dot")
+        .attr("cx", d => xScale(d.lap))
+        .attr("cy", d => yScale(d.time))
+        .attr("r", 4.5)
+        .attr("fill", d => colorScale(d.car))
+        .append("title")
+            .text(d => `Car ${d.car}\nLap ${d.lap}: ${d.time.toFixed(4)}s`); */
+
+    // Add the Legend
+    const legend = svg.append("g")
+        .attr("transform", `translate(${width + 20}, 10)`);
+
+    // --- Show All / Hide All toggle button ---
+    const toggleButton = legend.append("g")
+        .attr("class", "legend-toggle-all")
+        .attr("transform", "translate(0, 0)")
+        .style("cursor", "pointer");
+
+    const toggleButtonRect = toggleButton.append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", 96)
+        .attr("height", 24)
+        .attr("rx", 4)
+        .attr("fill", "#f3f4f6")
+        .attr("stroke", "#d1d5db");
+
+    const toggleButtonText = toggleButton.append("text")
+        .attr("x", 48)
+        .attr("y", 16)
+        .attr("text-anchor", "middle")
+        .attr("class", "legend-text")
+        .style("font-weight", "600")
+        .text("Hide All");
+
+    // --- Compare Laps button ---
+    // Toggles a click-and-drag lap-range selector: while active, dragging on
+    // the chart draws a box instead of panning, and releasing it compares
+    // whichever drivers are currently visible over that lap range.
+    const compareButton = legend.append("g")
+        .attr("class", "legend-compare-laps")
+        .attr("transform", "translate(104, 0)")
+        .style("cursor", "pointer");
+
+    const compareButtonRect = compareButton.append("rect")
+        .attr("x", 0)
+        .attr("y", 0)
+        .attr("width", 96)
+        .attr("height", 24)
+        .attr("rx", 4)
+        .attr("fill", "#f3f4f6")
+        .attr("stroke", "#d1d5db");
+
+    const compareButtonText = compareButton.append("text")
+        .attr("x", 48)
+        .attr("y", 16)
+        .attr("text-anchor", "middle")
+        .attr("class", "legend-text")
+        .style("font-weight", "600")
+        .text("Compare Laps");
+
+    compareButton.append("title")
+        .text("Click to toggle lap-range comparison mode, then drag a box across the laps you want to compare");
+
+    // Vertical offset for the per-driver rows, to leave room for the button
+    const legendRowsTop = 36;
+
+    const legendRows = legend.append("g")
+        .attr("transform", `translate(0, ${legendRowsTop})`);
+
+    // Row sizing: wide enough for the longest driver name plus a color swatch
+    const legendRowWidth = 226;
+    const legendRowHeight = 22;
+
+    carKeys.forEach((carNumber, index) => {
+        const legendRow = legendRows.append("g")
+            .attr("class", "legend-row")
+            .attr("data-car", carNumber)
+            .attr("transform", `translate(0, ${index * 26})`)
+            .on("click", function () {
+                const row = d3.select(this);
+                const isHidden = row.classed("hidden");
+                row.classed("hidden", !isHidden);
+
+                svg.select(`.car-line-${carNumber}`)
+                    .style("display", isHidden ? null : "none");
+
+                updateToggleButtonLabel();
+            });
+
+        // Border so each row clearly reads as a clickable button
+        legendRow.append("rect")
+            .attr("class", "legend-btn-bg")
+            .attr("x", -8)
+            .attr("y", -6)
+            .attr("width", legendRowWidth)
+            .attr("height", legendRowHeight)
+            .attr("rx", 4);
+
+        legendRow.append("line")
+            .attr("class", "legend-swatch")
+            .attr("x1", 0)
+            .attr("x2", 16)
+            .attr("y1", 6)
+            .attr("y2", 6)
+            .attr("stroke", colorScale(carNumber))
+            .attr("stroke-width", 3)
+            .attr("stroke-dasharray", dashScale(carNumber));
+
+        legendRow.append("text")
+            .attr("class", "legend-text")
+            .attr("x", 24)
+            .attr("y", 10)
+            .text(`Car ${carNumber} - ${driverNames[carNumber] || "Unknown"}`);
+
+        // Custom color picker: lets the user pick any color for this line.
+        // Sits inside a foreignObject so we can embed a native <input
+        // type="color">. Clicks on it stop propagation so opening the color
+        // picker doesn't also toggle the line's visibility.
+        const colorPicker = legendRow.append("foreignObject")
+            .attr("x", legendRowWidth - 34)
+            .attr("y", -3)
+            .attr("width", 20)
+            .attr("height", 16)
+            .on("click", (event) => event.stopPropagation())
+            .on("mousedown", (event) => event.stopPropagation());
+
+        colorPicker.append(() => document.createElement("input"))
+            .attr("type", "color")
+            .attr("class", "legend-color-input")
+            .attr("value", colorScale(carNumber))
+            .attr("title", `Choose a custom color for Car ${carNumber} - ${driverNames[carNumber] || "Unknown"}`)
+            .on("input", function () {
+                const newColor = this.value;
+                svg.select(`.car-line-${carNumber}`).attr("stroke", newColor);
+                legendRow.select(".legend-swatch").attr("stroke", newColor);
+                updateBoxPlotColor(carNumber, newColor);
+            });
+    });
+
+    // Keep the button label in sync with the current show/hide state:
+    // "Hide All" when at least one line is still visible, "Show All" once
+    // every line has been hidden.
+    function updateToggleButtonLabel() {
+        const allHidden = legendRows.selectAll(".legend-row").size() ===
+            legendRows.selectAll(".legend-row.hidden").size();
+        toggleButtonText.text(allHidden ? "Show All" : "Hide All");
+    }
+
+    toggleButton.on("click", function () {
+        const shouldHide = toggleButtonText.text() === "Hide All";
+
+        legendRows.selectAll(".legend-row")
+            .classed("hidden", shouldHide)
+            .each(function (d) {
+                const carNumber = d3.select(this).attr("data-car");
+                svg.select(`.car-line-${carNumber}`)
+                    .style("display", shouldHide ? "none" : null);
+            });
+
+        toggleButtonText.text(shouldHide ? "Show All" : "Hide All");
+    });
+
+    // --- Zoom / Pan interactivity ---
+    // Scroll or pinch to zoom, drag to pan, double-click (or the Reset Zoom
+    // button) to return to the original view. Mirrors the interaction model
+    // from https://observablehq.com/@d3/zoomable-bar-chart, adapted for a
+    // multi-line chart: on every zoom event we rescale both axes and redraw
+    // the lines against the rescaled x/y scales rather than swapping bar
+    // widths.
+    //
+    // Two things kept this smooth even when fully zoomed in and dragging:
+    //  1. Panning fires many more "zoom" events than the screen can actually
+    //     repaint, so raw work is batched into at most one redraw per
+    //     animation frame instead of once per event.
+    //  2. Every car's full ~90-point lap history was being run through the
+    //     line generator on every redraw, even though only a handful of laps
+    //     are visible when zoomed all the way in. Each car's points are now
+    //     sliced down to the visible lap range (plus a small buffer) with a
+    //     binary search before being handed to the line generator.
+    const bisectLap = d3.bisector(d => d.lap).left;
+
+    function getVisibleSlice(points, lapMin, lapMax) {
+        const buffer = 2; // keep a couple laps on either side for smooth edges
+        let i0 = bisectLap(points, lapMin - buffer);
+        let i1 = bisectLap(points, lapMax + buffer);
+        i0 = Math.max(0, i0 - 1);
+        i1 = Math.min(points.length, i1 + 1);
+        return points.slice(i0, i1);
+    }
+
+    // Track whatever x/y scales are currently in effect (identity by
+    // default, rescaled while zoomed) so lap-range math for Compare Laps
+    // stays correct no matter the current zoom/pan position.
+    let currentXScale = xScale;
+    let currentYScale = yScale;
+
+    function draw(transform) {
+        const newX = transform.rescaleX(xScale);
+        const newY = transform.rescaleY(yScale);
+        currentXScale = newX;
+        currentYScale = newY;
+
+        renderAxes(newX, newY);
+
+        const [lapMin, lapMax] = newX.domain();
+        const zoomedLineGenerator = d3.line()
+            .x(d => newX(d.lap))
+            .y(d => newY(d.time))
+            .curve(d3.curveMonotoneX);
+
+        plotArea.selectAll(".car-line")
+            .filter(function () { return this.style.display !== "none"; })
+            .attr("d", d => zoomedLineGenerator(getVisibleSlice(d[1], lapMin, lapMax)));
+    }
+
+    let pendingTransform = null;
+    let rafHandle = null;
+
+    function scheduleDraw(transform) {
+        pendingTransform = transform;
+        if (rafHandle !== null) return;
+        rafHandle = requestAnimationFrame(() => {
+            rafHandle = null;
+            draw(pendingTransform);
+        });
+    }
+
+    const zoom = d3.zoom()
+        .scaleExtent([1, 25])
+        .translateExtent([[0, 0], [width, height]])
+        .extent([[0, 0], [width, height]])
+        .on("zoom", event => scheduleDraw(event.transform));
+
+    // Transparent overlay that captures scroll/drag gestures over the plot
+    // area. Sits on top of the lines but doesn't extend over the legend.
+    const zoomOverlay = svg.append("rect")
+        .attr("class", "zoom-overlay")
+        .attr("width", width)
+        .attr("height", height)
+        .style("fill", "none")
+        .style("pointer-events", "all");
+
+    function resetZoom() {
+        zoomOverlay.transition().duration(500).call(zoom.transform, d3.zoomIdentity);
+    }
+
+    // Named hint text so Compare Laps mode can swap its wording in and out
+    const hintText = svg.append("text")
+        .attr("class", "axis-label")
+        .attr("x", -20)
+        .attr("y", -20)
+        .style("fill", "#6b7280")
+        .style("font-style", "italic")
+        .text("Scroll/pinch to zoom, drag to pan, double-click to reset");
+
+    // The in-progress/last-drawn selection box
+    const selectionRect = svg.append("rect")
+        .attr("class", "compare-selection")
+        .attr("fill", "#3b82f6")
+        .attr("fill-opacity", 0.12)
+        .attr("stroke", "#3b82f6")
+        .attr("stroke-width", 1.5)
+        .attr("stroke-dasharray", "4,3")
+        .style("display", "none")
+        .style("pointer-events", "none");
+
+    // Result readout, shown once a selection is released
+    const compareResultText = svg.append("text")
+        .attr("class", "axis-label")
+        .attr("x", -20)
+        .attr("y", -20)
+        .style("fill", "#1d4ed8")
+        .style("font-weight", "600")
+        .style("display", "none");
+
+    function showCompareMessage(text) {
+        hintText.style("display", "none");
+        compareResultText.style("display", null).text(text);
+    }
+
+    function getVisibleCarKeys() {
+        return legendRows.selectAll(".legend-row:not(.hidden)").nodes()
+            .map(node => +node.getAttribute("data-car"));
+    }
+
+    // Figures out, lap by lap across every currently-visible driver, who
+    // posted the faster time, then reports what share of the selected laps
+    // each driver won.
+    function runComparison(lapMin, lapMax) {
+        const visibleCars = getVisibleCarKeys();
+
+        if (visibleCars.length < 2) {
+            showCompareMessage("Show at least two drivers (use the legend) to compare them.");
+            return;
+        }
+        if (!Number.isFinite(lapMin) || !Number.isFinite(lapMax) || lapMax <= lapMin) {
+            showCompareMessage("Drag out a wider box to select a lap range.");
+            return;
+        }
+
+        const wins = new Map(visibleCars.map(c => [c, 0]));
+        let comparedLaps = 0;
+
+        for (let lap = lapMin; lap <= lapMax; lap++) {
+            const timesThisLap = [];
+            visibleCars.forEach(carNumber => {
+                const point = (sumData.get(carNumber) || []).find(d => d.lap === lap);
+                if (point) timesThisLap.push({ car: carNumber, time: point.time });
+            });
+            if (timesThisLap.length >= 2) {
+                comparedLaps++;
+                let fastest = timesThisLap[0];
+                timesThisLap.forEach(t => { if (t.time < fastest.time) fastest = t; });
+                wins.set(fastest.car, wins.get(fastest.car) + 1);
+            }
+        }
+
+        if (comparedLaps === 0) {
+            showCompareMessage(`No overlapping laps with data for laps ${lapMin}-${lapMax}.`);
+            return;
+        }
+
+        const ranked = Array.from(wins.entries())
+            .map(([car, count]) => ({
+                car,
+                name: driverNames[car] || `Car ${car}`,
+                pct: (count / comparedLaps) * 100
+            }))
+            .sort((a, b) => b.pct - a.pct);
+
+        const MAX_SHOWN = 3;
+        const shown = ranked.length > MAX_SHOWN ? ranked.slice(0, MAX_SHOWN) : ranked;
+        const truncated = ranked.length > MAX_SHOWN;
+
+        const message = ranked.length === 2
+            ? `${ranked[0].name} - faster across ${ranked[0].pct.toFixed(0)}% of selected laps ` +
+              `(laps ${lapMin}-${lapMax}, ${comparedLaps} compared)`
+            : `Laps ${lapMin}-${lapMax} (${comparedLaps} compared): ` +
+              shown.map(r => `${r.name} fastest on ${r.pct.toFixed(0)}%`).join(" \u00b7 ") +
+              (truncated ? ` \u00b7 (top ${MAX_SHOWN} of ${ranked.length} drivers shown)` : "");
+
+        showCompareMessage(message);
+    }
+
+    // Fully swaps the overlay's event listeners between normal zoom/pan and
+    // Compare Laps drag-to-select, rather than trying to run both at once.
+    function attachZoomBehavior() {
+        zoomOverlay
+            .style("cursor", null)
+            .call(zoom)
+            .on("dblclick.zoom", null)
+            .on("dblclick", () => resetZoom());
+    }
+
+    function detachZoomBehavior() {
+        zoomOverlay.on(".zoom", null).on("dblclick", null);
+    }
+
+    function attachCompareBehavior() {
+        let startPt = null;
+
+        zoomOverlay
+            .style("cursor", "crosshair")
+            .on("mousedown.compare", function (event) {
+                const [x0, y0] = d3.pointer(event, plotArea.node());
+                startPt = [
+                    Math.max(0, Math.min(width, x0)),
+                    Math.max(0, Math.min(height, y0))
+                ];
+                selectionRect
+                    .attr("x", startPt[0]).attr("y", startPt[1])
+                    .attr("width", 0).attr("height", 0)
+                    .style("display", null);
+                compareResultText.style("display", "none");
+                hintText.style("display", null)
+                    .text("Drag a box over the lap range you want to compare\u2026");
+            })
+            .on("mousemove.compare", function (event) {
+                if (!startPt) return;
+                const [x1, y1] = d3.pointer(event, plotArea.node());
+                const cx1 = Math.max(0, Math.min(width, x1));
+                const cy1 = Math.max(0, Math.min(height, y1));
+                selectionRect
+                    .attr("x", Math.min(startPt[0], cx1))
+                    .attr("y", Math.min(startPt[1], cy1))
+                    .attr("width", Math.abs(cx1 - startPt[0]))
+                    .attr("height", Math.abs(cy1 - startPt[1]));
+            })
+            .on("mouseup.compare", function (event) {
+                if (!startPt) return;
+                const [x1] = d3.pointer(event, plotArea.node());
+                const cx1 = Math.max(0, Math.min(width, x1));
+                const rawLapA = currentXScale.invert(startPt[0]);
+                const rawLapB = currentXScale.invert(cx1);
+                startPt = null;
+
+                const lapMin = Math.round(Math.min(rawLapA, rawLapB));
+                const lapMax = Math.round(Math.max(rawLapA, rawLapB));
+                runComparison(lapMin, lapMax);
+            });
+    }
+
+    function detachCompareBehavior() {
+        zoomOverlay
+            .style("cursor", null)
+            .on("mousedown.compare", null)
+            .on("mousemove.compare", null)
+            .on("mouseup.compare", null);
+        selectionRect.style("display", "none");
+    }
+
+    let compareMode = false;
+
+    function setCompareMode(on) {
+        compareMode = on;
+        compareResultText.style("display", "none");
+        selectionRect.style("display", "none");
+
+        if (on) {
+            detachZoomBehavior();
+            attachCompareBehavior();
+            compareButtonRect.attr("fill", "#dbeafe").attr("stroke", "#60a5fa");
+            compareButtonText.text("Exit Compare");
+            hintText.style("display", null)
+                .text("Drag a box over the lap range you want to compare\u2026");
+        } else {
+            detachCompareBehavior();
+            attachZoomBehavior();
+            compareButtonRect.attr("fill", "#f3f4f6").attr("stroke", "#d1d5db");
+            compareButtonText.text("Compare Laps");
+            hintText.style("display", null)
+                .text("Scroll/pinch to zoom, drag to pan, double-click to reset");
+        }
+    }
+
+    compareButton.on("click", () => setCompareMode(!compareMode));
+
+    // Start in normal zoom/pan mode
+    attachZoomBehavior();
+
+    // ================= Box & Whisker Plot: Lap Time Distribution =================
+    // Uses the same (pit-stop-filtered) per-car lap data as the line chart
+    // above. For each driver:
+    //   - box spans Q1-Q3, with a solid line at the median and a dashed
+    //     line at the mean
+    //   - whiskers are NOT the usual 1.5*IQR convention; instead they're
+    //     set from the car's own mean/std so that they bound the middle
+    //     99% of a normal distribution fitted to that car's lap times
+    //     (mean +/- 2.576 sigma), clipped to the most extreme lap that's
+    //     still inside that range
+    //   - any lap outside that 99% range is drawn as an individual dot
+    //   - drivers are sorted left-to-right by ascending mean lap time
+    const boxContainer = d3.select("#boxplot-chart");
+    boxContainer.selectAll("*").remove();
+
+    const boxMargin = { top: 30, right: 265, bottom: 90, left: 60 };
+    const boxWidth = 1600 - boxMargin.left - boxMargin.right;
+    const boxHeight = 800;
+
+    // Keeps a driver's box-plot colors (box, whiskers, caps, median/mean
+    // lines, outlier dots) in sync whenever their line color is changed via
+    // the legend's color picker. Safe to call before the box plot has been
+    // built (e.g. no-op) since it just no-ops on an empty selection.
+    function updateBoxPlotColor(carNumber, newColor) {
+        const carBoxGroup = d3.select(`.car-box-${carNumber}`);
+        if (carBoxGroup.empty()) return;
+        carBoxGroup.selectAll(".whisker, .cap, .median-line, .mean-line").attr("stroke", newColor);
+        carBoxGroup.select(".box-rect").attr("fill", newColor).attr("stroke", newColor);
+        carBoxGroup.selectAll(".outlier-dot").attr("fill", newColor);
+    }
+
+    // Compact "Surname (R)" label for the box plot's x-axis, where the full
+    // "Car N - Full Name" legend label would be too wide for 25+ categories.
+    function shortDriverLabel(carNumber) {
+        const full = driverNames[carNumber] || `Car ${carNumber}`;
+        const isRookie = / \(R\)$/.test(full);
+        const base = full.replace(/ \(R\)$/, "");
+        const parts = base.split(" ");
+        const surname = parts[parts.length - 1];
+        return isRookie ? `${surname} (R)` : surname;
+    }
+
+    // Two-tailed z-score such that +/- Z_99 sigma around the mean covers
+    // 99% of a normal distribution's probability mass.
+    const Z_99 = 2.5758293035489004;
+
+    function computeBoxStats(values) {
+        const sorted = values.slice().sort(d3.ascending);
+        const n = sorted.length;
+        const mean = d3.mean(sorted);
+        const std = n > 1 ? d3.deviation(sorted) : 0;
+        const median = d3.median(sorted);
+        const q1 = d3.quantile(sorted, 0.25);
+        const q3 = d3.quantile(sorted, 0.75);
+
+        const lowerFence = mean - Z_99 * std;
+        const upperFence = mean + Z_99 * std;
+
+        const within = sorted.filter(v => v >= lowerFence && v <= upperFence);
+        const whiskerLow = within.length ? within[0] : sorted[0];
+        const whiskerHigh = within.length ? within[within.length - 1] : sorted[n - 1];
+        const outliers = sorted.filter(v => v < lowerFence || v > upperFence);
+
+        return { mean, median, q1, q3, whiskerLow, whiskerHigh, outliers, n };
+    }
+
+    const boxStatsByCar = new Map();
+    carKeys.forEach(carNumber => {
+        const values = (sumData.get(carNumber) || []).map(d => d.time);
+        if (values.length > 0) {
+            boxStatsByCar.set(carNumber, computeBoxStats(values));
+        }
+    });
+
+    if (boxStatsByCar.size === 0) {
+        boxContainer.append("p")
+            .style("font-family", "sans-serif")
+            .style("color", "#6b7280")
+            .style("padding", "20px")
+            .text("Not enough data to build a box plot for this race.");
+    } else {
+        const boxCarKeys = carKeys
+            .filter(c => boxStatsByCar.has(c))
+            .sort((a, b) => boxStatsByCar.get(a).mean - boxStatsByCar.get(b).mean);
+
+        const boxSvg = boxContainer
+            .append("svg")
+                .attr("width", boxWidth + boxMargin.left + boxMargin.right)
+                .attr("height", boxHeight + boxMargin.top + boxMargin.bottom)
+            .append("g")
+                .attr("transform", `translate(${boxMargin.left},${boxMargin.top})`);
+
+        const xBand = d3.scaleBand()
+            .domain(boxCarKeys)
+            .range([0, boxWidth])
+            .padding(0.4);
+
+        // Y domain must fit every whisker end and every outlier
+        let yMin = Infinity;
+        let yMax = -Infinity;
+        boxStatsByCar.forEach(stats => {
+            yMin = Math.min(yMin, stats.whiskerLow, d3.min(stats.outliers) ?? Infinity);
+            yMax = Math.max(yMax, stats.whiskerHigh, d3.max(stats.outliers) ?? -Infinity);
+        });
+        const yBoxPad = (yMax - yMin) * 0.08 || 1;
+        const yBox = d3.scaleLinear()
+            .domain([yMin - yBoxPad, yMax + yBoxPad])
+            .nice()
+            .range([boxHeight, 0]);
+
+        // Clip path so the rotated driver-name ticks below the axis never
+        // spill into the surrounding margin.
+        boxSvg.append("defs").append("clipPath")
+            .attr("id", "box-xaxis-clip")
+            .append("rect")
+            .attr("x", 0)
+            .attr("y", -6)
+            .attr("width", boxWidth)
+            .attr("height", 100);
+
+        // Gridlines
+        boxSvg.append("g")
+            .attr("class", "grid")
+            .call(d3.axisLeft(yBox).ticks(8).tickSize(-boxWidth).tickFormat(""));
+
+        // X axis: one tick per driver, rotated so labels don't collide
+        boxSvg.append("g")
+            .attr("class", "box-x-axis-group")
+            .attr("clip-path", "url(#box-xaxis-clip)")
+            .attr("transform", `translate(0,${boxHeight})`)
+            .call(d3.axisBottom(xBand).tickFormat(shortDriverLabel))
+            .selectAll("text")
+                .attr("class", "axis-label")
+                .attr("transform", "rotate(-40)")
+                .style("text-anchor", "end")
+                .attr("dx", "-0.6em")
+                .attr("dy", "0.15em");
+
+        boxSvg.append("g")
+            .call(d3.axisLeft(yBox).ticks(8));
+
+        boxSvg.append("text")
+            .attr("class", "axis-label")
+            .attr("text-anchor", "middle")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -boxHeight / 2)
+            .attr("y", -45)
+            .text("Lap Time (s)");
+
+        boxSvg.append("text")
+            .attr("class", "axis-label")
+            .attr("text-anchor", "middle")
+            .attr("x", boxWidth / 2)
+            .attr("y", boxHeight + 80)
+            .text("Driver");
+
+        boxSvg.append("text")
+            .attr("class", "axis-label")
+            .attr("x", 0)
+            .attr("y", -12)
+            .style("fill", "#6b7280")
+            .style("font-style", "italic")
+            .text("Box = Q1-Q3 \u00b7 solid = median \u00b7 dashed = mean \u00b7 whiskers = 99% of a fitted normal distribution \u00b7 dots = outliers");
+
+        const bandwidth = xBand.bandwidth();
+        const boxWidthPx = Math.min(bandwidth, 40);
+        const boxLeftOffset = (bandwidth - boxWidthPx) / 2;
+
+        boxCarKeys.forEach(carNumber => {
+            const stats = boxStatsByCar.get(carNumber);
+            const color = colorScale(carNumber);
+            const bandX = xBand(carNumber);
+            const centerX = bandX + bandwidth / 2;
+            const boxX = bandX + boxLeftOffset;
+
+            const carGroup = boxSvg.append("g")
+                .attr("class", `car-box car-box-${carNumber}`);
+
+            // Whiskers + caps
+            carGroup.append("line")
+                .attr("class", "whisker")
+                .attr("x1", centerX).attr("x2", centerX)
+                .attr("y1", yBox(stats.whiskerLow)).attr("y2", yBox(stats.q1))
+                .attr("stroke", color).attr("stroke-width", 1.5);
+
+            carGroup.append("line")
+                .attr("class", "whisker")
+                .attr("x1", centerX).attr("x2", centerX)
+                .attr("y1", yBox(stats.q3)).attr("y2", yBox(stats.whiskerHigh))
+                .attr("stroke", color).attr("stroke-width", 1.5);
+
+            carGroup.append("line")
+                .attr("class", "cap")
+                .attr("x1", centerX - boxWidthPx * 0.25).attr("x2", centerX + boxWidthPx * 0.25)
+                .attr("y1", yBox(stats.whiskerLow)).attr("y2", yBox(stats.whiskerLow))
+                .attr("stroke", color).attr("stroke-width", 1.5);
+
+            carGroup.append("line")
+                .attr("class", "cap")
+                .attr("x1", centerX - boxWidthPx * 0.25).attr("x2", centerX + boxWidthPx * 0.25)
+                .attr("y1", yBox(stats.whiskerHigh)).attr("y2", yBox(stats.whiskerHigh))
+                .attr("stroke", color).attr("stroke-width", 1.5);
+
+            // Box (Q1 - Q3)
+            carGroup.append("rect")
+                .attr("class", "box-rect")
+                .attr("x", boxX)
+                .attr("y", yBox(stats.q3))
+                .attr("width", boxWidthPx)
+                .attr("height", Math.max(1, yBox(stats.q1) - yBox(stats.q3)))
+                .attr("fill", color)
+                .attr("fill-opacity", 0.15)
+                .attr("stroke", color)
+                .attr("stroke-width", 1.5);
+
+            // Median: solid line
+            carGroup.append("line")
+                .attr("class", "median-line")
+                .attr("x1", boxX).attr("x2", boxX + boxWidthPx)
+                .attr("y1", yBox(stats.median)).attr("y2", yBox(stats.median))
+                .attr("stroke", color)
+                .attr("stroke-width", 2);
+
+            // Mean: dashed line
+            carGroup.append("line")
+                .attr("class", "mean-line")
+                .attr("x1", boxX).attr("x2", boxX + boxWidthPx)
+                .attr("y1", yBox(stats.mean)).attr("y2", yBox(stats.mean))
+                .attr("stroke", color)
+                .attr("stroke-width", 2)
+                .attr("stroke-dasharray", "5,3");
+
+            // Outliers: individual dots
+            carGroup.selectAll(".outlier-dot")
+                .data(stats.outliers)
+                .enter()
+                .append("circle")
+                .attr("class", "outlier-dot")
+                .attr("cx", centerX)
+                .attr("cy", d => yBox(d))
+                .attr("r", 3)
+                .attr("fill", color)
+                .attr("fill-opacity", 0.85)
+                .attr("stroke", "#ffffff")
+                .attr("stroke-width", 0.75);
+
+            carGroup.append("title")
+                .text(
+                    `Car ${carNumber} - ${driverNames[carNumber] || "Unknown"}\n` +
+                    `Mean: ${stats.mean.toFixed(3)}s | Median: ${stats.median.toFixed(3)}s\n` +
+                    `Q1: ${stats.q1.toFixed(3)}s | Q3: ${stats.q3.toFixed(3)}s\n` +
+                    `Whiskers (99% of fitted normal dist.): ${stats.whiskerLow.toFixed(3)}s - ${stats.whiskerHigh.toFixed(3)}s\n` +
+                    `Outliers: ${stats.outliers.length} of ${stats.n} laps`
+                );
+        });
+    }
+
+</script>
+    <div class="data-source-attribution" style="
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.75rem;
+            color: #666;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            z-index: 1000;
+            font-family: sans-serif;">
+            <i class="fas fa-database" style="margin-right: 5px;"></i>
+            Source: 
+            <a href="https://www.indycar.com/results/ntt-indycar-series/2026/childrens-of-alabama-indy-grand-prix/race" 
+            target="_blank" 
+            style="color: #000000; text-decoration: none; font-weight: bold;">
+            NTT INDYCAR Series
+            </a>
+    </div>
+</body>
+</html>
