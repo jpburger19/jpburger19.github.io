@@ -166,6 +166,32 @@
             margin-right: 4px;
             font-size: 0.85rem;
         }
+        .consistency-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 34px;
+            margin-bottom: 10px;
+        }
+        .chart-filter-btn {
+            font-family: var(--font-label);
+            font-size: 0.72rem;
+            letter-spacing: 0.04em;
+            color: var(--color-neutral);
+            background: var(--color-paper);
+            border: 1px solid var(--color-rule);
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: color 180ms ease, border-color 180ms ease, background 180ms ease;
+        }
+        .chart-filter-btn:hover {
+            color: var(--color-accent-ink);
+            border-color: var(--color-accent-ink);
+        }
+        .chart-filter-btn.is-active {
+            color: var(--color-accent-ink);
+            background: var(--color-accent-tint);
+            border-color: var(--color-accent-tint-border);
+        }
         /* Maximize overlay — a plain fixed-position layer we control
            completely, instead of the native Fullscreen API. Different
            browsers (notably Firefox) size/position the ":fullscreen"
@@ -4189,11 +4215,54 @@
        the box plot: x = average clean-lap pace, y = lap-to-lap
        variability. Bottom-left is the sweet spot — fast AND repeatable.
        ══════════════════════════════════════════════════════════════ */
-    (function renderConsistencyChart() {
-        const container = d3.select("#consistency-chart");
-        container.selectAll("*").remove();
+    let consistencyCompletedOnly = false;
 
-        const points = carKeys
+    function renderConsistencyChart() {
+        const container = d3.select("#consistency-chart");
+
+        // Toolbar (filter button) is built once and just relabeled on
+        // later calls, so it survives re-renders and stays put in the
+        // maximized/fullscreen view too (it lives inside the same
+        // #consistency-chart div that gets moved there).
+        let toolbar = container.select(".consistency-toolbar");
+        if (toolbar.empty()) {
+            toolbar = container.append("div").attr("class", "consistency-toolbar");
+            toolbar.append("button")
+                .attr("type", "button")
+                .attr("class", "chart-filter-btn")
+                .append("span");
+            toolbar.select("button").on("click", () => {
+                consistencyCompletedOnly = !consistencyCompletedOnly;
+                renderConsistencyChart();
+            });
+        }
+        toolbar.select(".chart-filter-btn").classed("is-active", consistencyCompletedOnly);
+        toolbar.select(".chart-filter-btn span")
+            .text(consistencyCompletedOnly
+                ? "Showing drivers who completed \u226550% of the race \u2014 click to show all"
+                : "Filter out drivers who completed < 50% of the race");
+
+        let chartArea = container.select(".consistency-chart-area");
+        if (chartArea.empty()) {
+            chartArea = container.append("div").attr("class", "consistency-chart-area");
+        }
+        chartArea.selectAll("*").remove();
+
+        // Laps actually completed per car, from the raw (unfiltered) data —
+        // sumData/boxStatsByCar already exclude lap 1 and pit/outlier laps,
+        // which would undercount how far a car actually got in the race.
+        const totalRaceLaps = d3.max(rawData, d => d.lap) || 1;
+        const lapsCompletedByCar = new Map();
+        carKeys.forEach(car => {
+            const carRows = rawData.filter(d => d.car === car);
+            lapsCompletedByCar.set(car, carRows.length ? d3.max(carRows, d => d.lap) : 0);
+        });
+
+        const eligibleCarKeys = consistencyCompletedOnly
+            ? carKeys.filter(car => (lapsCompletedByCar.get(car) || 0) / totalRaceLaps >= 0.5)
+            : carKeys;
+
+        const points = eligibleCarKeys
             .map(car => {
                 const stats = boxStatsByCar.get(car);
                 if (!stats || stats.n < 2) return null;
@@ -4202,7 +4271,7 @@
             .filter(Boolean);
 
         if (points.length === 0) {
-            container.append("p")
+            chartArea.append("p")
                 .attr("class", "axis-label")
                 .style("padding", "20px")
                 .text("Not enough data to build a consistency chart for this race.");
@@ -4213,7 +4282,7 @@
         const csWidth = 900;
         const csHeight = 560;
 
-        const csSvg = container.append("svg")
+        const csSvg = chartArea.append("svg")
                 .attr("width", csWidth + csMargin.left + csMargin.right)
                 .attr("height", csHeight + csMargin.top + csMargin.bottom)
             .append("g")
@@ -4384,20 +4453,21 @@
         });
 
         // Legend — how the quadrants are drawn, and what the symbols mean.
-        container.append("div")
+        chartArea.append("div")
             .attr("class", "chart-legend")
             .html(
                 '<div><strong>Quadrants:</strong> vertical dashed line = median average pace ' +
                 '\u00b7 horizontal dashed line = median lap-to-lap variability</div>' +
                 '<div class="legend-symbols">' +
                 '<strong>Symbols:</strong>' +
-                '<span><b>(+)</b> = fastest average pace</span>' +
-                '<span><b>(-)</b> = slowest average pace</span>' +
-                '<span><b>(^)</b> = most consistent</span>' +
-                '<span><b>(*)</b> = least consistent</span>' +
+                '<span><b>(+)</b> fastest average pace</span>' +
+                '<span><b>(-)</b> slowest average pace</span>' +
+                '<span><b>(^)</b> most consistent</span>' +
+                '<span><b>(*)</b> least consistent</span>' +
                 '</div>'
             );
-    })();
+    }
+    renderConsistencyChart();
 
     /* ══════════════════════════════════════════════════════════════
        MAXIMIZE BUTTON — one added to every .chart-panel. Rather than
