@@ -3,21 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <title>INDYCAR Data Analysis</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;700;800&family=Albert+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        /* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4
+         * genre: sport-editorial · theme: Sport — crisp near-white paper, uppercase Inter Tight display,
+         *   Albert Sans body, burnt-orange accent, sharp corners / no shadow.
+         * Scope note: only page chrome (type, panel, legend, axis, grid, button chrome) is retheme'd.
+         *   The per-driver colorScale (d3.schemeTableau10 + schemeSet1) is a data encoding, not a brand
+         *   color, and is left untouched so drivers stay distinguishable.
+         * nav: minimal breadcrumb bar (back to race index) — utility sub-page, no full nav chrome.
+         */
+        :root {
+            --color-paper:    #f7f8fa;
+            --color-paper-2:  #eef0f3;
+            --color-paper-3:  #e3e6ea;
+            --color-rule:     #c7cbd1;
+            --color-rule-2:   #4b4f5c;
+            --color-muted:    #6b7280;
+            --color-neutral:  #494b57;
+            --color-ink-2:    #2c2e38;
+            --color-ink:      #1c1e26;
+            --color-accent:      #c2410c;
+            --color-accent-ink:  #b23a0b;
+            --color-accent-tint: #ffedd5;
+            --color-accent-tint-border: #f0975a;
+            --font-display: "Inter Tight", "Albert Sans", ui-sans-serif, sans-serif;
+            --font-body:    "Albert Sans", "Hanken Grotesk", ui-sans-serif, sans-serif;
+            --font-label:   "JetBrains Mono", ui-monospace, monospace;
+        }
+        * { box-sizing: border-box; }
+        html { overflow-x: clip; }
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
             margin: 0;
-            padding: 20px 0 60px;
-            font-family: sans-serif;
+            padding: 0 0 60px;
+            font-family: var(--font-body);
+            background: var(--color-paper);
+            color: var(--color-ink-2);
+            overflow-x: clip;
+        }
+        .wrap { width: 100%; max-width: 1200px; padding: 0 clamp(1.25rem, 4vw, 3rem); }
+        .utility-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--color-rule);
+            margin-bottom: 1.5rem;
+        }
+        .back-link {
+            font-family: var(--font-label);
+            font-size: 0.75rem;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+            color: var(--color-neutral);
+            text-decoration: none;
+            transition: color 180ms ease;
+        }
+        .back-link:hover { color: var(--color-accent-ink); }
+        .season-tag {
+            font-family: var(--font-label);
+            font-size: 0.75rem;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+            color: var(--color-accent-ink);
+            border: 1px solid var(--color-accent-ink);
+            padding: 3px 10px;
+        }
+        h1 {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-style: normal;
+            text-transform: uppercase;
+            letter-spacing: -0.03em;
+            line-height: 1.05;
+            font-size: clamp(1.75rem, 3vw + 1rem, 2.5rem);
+            color: var(--color-ink);
+            margin: 0 0 0.5rem;
+        }
+        .section-label {
+            display: flex;
+            align-items: baseline;
+            gap: 0.75rem;
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--color-rule);
+        }
+        .section-label .idx {
+            font-family: var(--font-label);
+            font-size: 0.75rem;
+            color: var(--color-accent-ink);
+        }
+        .section-label h2 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-style: normal;
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+            font-size: 1.25rem;
+            color: var(--color-ink);
+            margin: 0;
+        }
+        .chart-panel {
+            position: relative;
+            border: 1px solid var(--color-rule);
+            border-radius: 0;
+            background: var(--color-paper);
+            padding: 1rem;
+            overflow-x: auto;
+        }
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 5;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-label);
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--color-neutral);
+            background: var(--color-paper);
+            border: 1px solid var(--color-rule);
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: color 180ms ease, border-color 180ms ease;
+        }
+        .fullscreen-btn:hover {
+            color: var(--color-accent-ink);
+            border-color: var(--color-accent-ink);
+        }
+        .fullscreen-btn svg { flex: none; }
+        /* Maximize overlay — a plain fixed-position layer we control
+           completely, instead of the native Fullscreen API. Different
+           browsers (notably Firefox) size/position the ":fullscreen"
+           element in ways that don't always respect author CSS the same
+           way, so this sidesteps that entirely. */
+        .chart-maximize-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            background: var(--color-paper);
+            overflow: hidden;
+        }
+        .chart-maximize-overlay.is-open { display: block; }
+        .chart-maximize-overlay .maximize-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+        }
+        .chart-maximize-close {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 3001;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-label);
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--color-neutral);
+            background: var(--color-paper);
+            border: 1px solid var(--color-rule);
+            padding: 7px 14px;
+            cursor: pointer;
+            transition: color 180ms ease, border-color 180ms ease;
+        }
+        .chart-maximize-close:hover {
+            color: var(--color-accent-ink);
+            border-color: var(--color-accent-ink);
+        }
+        .chart-maximize-title {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            z-index: 3001;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-style: normal;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            font-size: 1.1rem;
+            color: var(--color-ink);
+            max-width: calc(100vw - 220px);
+            overflow-wrap: anywhere;
+        }
+        .chart-maximize-title .idx {
+            font-family: var(--font-label);
+            font-size: 0.75rem;
+            letter-spacing: 0.10em;
+            color: var(--color-accent-ink);
+            text-transform: uppercase;
+            margin-right: 8px;
         }
         .line {
             fill: none;
             stroke-width: 3;
         }
         .dot {
-            stroke: #fff;
+            stroke: var(--color-paper);
             stroke-width: 1.5;
             cursor: pointer;
         }
@@ -25,12 +220,12 @@
             r: 7;
         }
         .axis-label {
-            font-family: sans-serif;
-            font-size: 12px;
-            fill: #000000;
+            font-family: var(--font-label);
+            font-size: 11px;
+            fill: var(--color-neutral);
         }
         .grid line {
-            stroke: #e5e7eb;
+            stroke: var(--color-rule);
             stroke-opacity: 0.7;
             shape-rendering: crispEdges;
         }
@@ -38,24 +233,24 @@
             stroke-width: 0;
         }
         .legend-text {
-            font-family: sans-serif;
-            font-size: 12px;
-            fill: #374151;
+            font-family: var(--font-label);
+            font-size: 11px;
+            fill: var(--color-neutral);
         }
         .legend-row {
             cursor: pointer;
         }
         .legend-btn-bg {
-            fill: #ffffff;
-            stroke: #d1d5db;
+            fill: var(--color-paper);
+            stroke: var(--color-rule);
             stroke-width: 1;
         }
         .legend-row:hover .legend-btn-bg {
-            fill: #f3f4f6;
-            stroke: #9ca3af;
+            fill: var(--color-paper-3);
+            stroke: var(--color-rule-2);
         }
         .legend-row.hidden .legend-btn-bg {
-            fill: #f9fafb;
+            fill: var(--color-paper-2);
         }
         .legend-row.hidden .legend-text {
             fill: #9ca3af;
@@ -79,7 +274,13 @@
     </style>
 </head>
 <body>
-<h2>2026 Ontario Honda Dealers Indy at Markham</h2>
-<h2>No data yet - Race on 8/16</h2>
+<div class="wrap">
+    <div class="utility-bar">
+        <a class="back-link" href="indycar-data-index.html">← INDYCAR Data Analysis</a>
+        <span class="season-tag">2026 Season</span>
+    </div>
+    <h1>Ontario Honda Dealers Indy at Markham</h1>
+    <h2>No data yet - Race on 8/16</h2>
+
 </body>
 </html>

@@ -4,21 +4,240 @@
     <meta charset="UTF-8">
     <title>INDYCAR Data Analysis</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;700;800&family=Albert+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        /* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4
+         * genre: sport-editorial · theme: Sport — crisp near-white paper, uppercase Inter Tight display,
+         *   Albert Sans body, burnt-orange accent, sharp corners / no shadow.
+         * Scope note: only page chrome (type, panel, legend, axis, grid, button chrome) is retheme'd.
+         *   The per-driver colorScale (d3.schemeTableau10 + schemeSet1) is a data encoding, not a brand
+         *   color, and is left untouched so drivers stay distinguishable.
+         * nav: minimal breadcrumb bar (back to race index) — utility sub-page, no full nav chrome.
+         */
+        :root {
+            --color-paper:    #f7f8fa;
+            --color-paper-2:  #eef0f3;
+            --color-paper-3:  #e3e6ea;
+            --color-rule:     #c7cbd1;
+            --color-rule-2:   #4b4f5c;
+            --color-muted:    #6b7280;
+            --color-neutral:  #494b57;
+            --color-ink-2:    #2c2e38;
+            --color-ink:      #1c1e26;
+            --color-accent:      #c2410c;
+            --color-accent-ink:  #b23a0b;
+            --color-accent-tint: #ffedd5;
+            --color-accent-tint-border: #f0975a;
+            --font-display: "Inter Tight", "Albert Sans", ui-sans-serif, sans-serif;
+            --font-body:    "Albert Sans", "Hanken Grotesk", ui-sans-serif, sans-serif;
+            --font-label:   "JetBrains Mono", ui-monospace, monospace;
+        }
+        * { box-sizing: border-box; }
+        html { overflow-x: clip; }
         body {
             display: flex;
             flex-direction: column;
             align-items: center;
             margin: 0;
-            padding: 20px 0 60px;
-            font-family: sans-serif;
+            padding: 0 0 60px;
+            font-family: var(--font-body);
+            background: var(--color-paper);
+            color: var(--color-ink-2);
+            overflow-x: clip;
+        }
+        .wrap { width: 100%; max-width: 1200px; padding: 0 clamp(1.25rem, 4vw, 3rem); }
+        .utility-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.5rem 0;
+            border-bottom: 1px solid var(--color-rule);
+            margin-bottom: 1.5rem;
+        }
+        .back-link {
+            font-family: var(--font-label);
+            font-size: 0.75rem;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+            color: var(--color-neutral);
+            text-decoration: none;
+            transition: color 180ms ease;
+        }
+        .back-link:hover { color: var(--color-accent-ink); }
+        .season-tag {
+            font-family: var(--font-label);
+            font-size: 0.75rem;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+            color: var(--color-accent-ink);
+            border: 1px solid var(--color-accent-ink);
+            padding: 3px 10px;
+        }
+        h1 {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-style: normal;
+            text-transform: uppercase;
+            letter-spacing: -0.03em;
+            line-height: 1.05;
+            font-size: clamp(1.75rem, 3vw + 1rem, 2.5rem);
+            color: var(--color-ink);
+            margin: 0 0 0.5rem;
+        }
+        .section-label {
+            display: flex;
+            align-items: baseline;
+            gap: 0.75rem;
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--color-rule);
+        }
+        .section-label .idx {
+            font-family: var(--font-label);
+            font-size: 0.75rem;
+            color: var(--color-accent-ink);
+        }
+        .section-label h2 {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-style: normal;
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+            font-size: 1.25rem;
+            color: var(--color-ink);
+            margin: 0;
+        }
+        .chart-panel {
+            position: relative;
+            border: 1px solid var(--color-rule);
+            border-radius: 0;
+            background: var(--color-paper);
+            padding: 1rem;
+            overflow-x: auto;
+        }
+        .fullscreen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 5;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-label);
+            font-size: 0.7rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--color-neutral);
+            background: var(--color-paper);
+            border: 1px solid var(--color-rule);
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: color 180ms ease, border-color 180ms ease;
+        }
+        .fullscreen-btn:hover {
+            color: var(--color-accent-ink);
+            border-color: var(--color-accent-ink);
+        }
+        .fullscreen-btn svg { flex: none; }
+        .chart-legend {
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid var(--color-rule);
+            font-family: var(--font-label);
+            font-size: 0.72rem;
+            line-height: 1.6;
+            color: var(--color-muted);
+            max-width: 900px;
+        }
+        .chart-legend strong {
+            color: var(--color-ink-2);
+            font-weight: 600;
+        }
+        .chart-legend .legend-symbols {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+            margin-top: 6px;
+        }
+        .chart-legend .legend-symbols b {
+            color: var(--color-accent-ink);
+            margin-right: 4px;
+            font-size: 0.85rem;
+        }
+        /* Maximize overlay — a plain fixed-position layer we control
+           completely, instead of the native Fullscreen API. Different
+           browsers (notably Firefox) size/position the ":fullscreen"
+           element in ways that don't always respect author CSS the same
+           way, so this sidesteps that entirely. */
+        .chart-maximize-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 3000;
+            background: var(--color-paper);
+            overflow: hidden;
+        }
+        .chart-maximize-overlay.is-open { display: block; }
+        .chart-maximize-overlay .maximize-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+        }
+        .chart-maximize-close {
+            position: fixed;
+            top: 18px;
+            right: 18px;
+            z-index: 3001;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--font-label);
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--color-neutral);
+            background: var(--color-paper);
+            border: 1px solid var(--color-rule);
+            padding: 7px 14px;
+            cursor: pointer;
+            transition: color 180ms ease, border-color 180ms ease;
+        }
+        .chart-maximize-close:hover {
+            color: var(--color-accent-ink);
+            border-color: var(--color-accent-ink);
+        }
+        .chart-maximize-title {
+            position: fixed;
+            top: 18px;
+            left: 18px;
+            z-index: 3001;
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-style: normal;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            font-size: 1.1rem;
+            color: var(--color-ink);
+            max-width: calc(100vw - 220px);
+            overflow-wrap: anywhere;
+        }
+        .chart-maximize-title .idx {
+            font-family: var(--font-label);
+            font-size: 0.75rem;
+            letter-spacing: 0.10em;
+            color: var(--color-accent-ink);
+            text-transform: uppercase;
+            margin-right: 8px;
         }
         .line {
             fill: none;
             stroke-width: 3;
         }
         .dot {
-            stroke: #fff;
+            stroke: var(--color-paper);
             stroke-width: 1.5;
             cursor: pointer;
         }
@@ -26,12 +245,12 @@
             r: 7;
         }
         .axis-label {
-            font-family: sans-serif;
-            font-size: 12px;
-            fill: #000000;
+            font-family: var(--font-label);
+            font-size: 11px;
+            fill: var(--color-neutral);
         }
         .grid line {
-            stroke: #e5e7eb;
+            stroke: var(--color-rule);
             stroke-opacity: 0.7;
             shape-rendering: crispEdges;
         }
@@ -39,24 +258,24 @@
             stroke-width: 0;
         }
         .legend-text {
-            font-family: sans-serif;
-            font-size: 12px;
-            fill: #374151;
+            font-family: var(--font-label);
+            font-size: 11px;
+            fill: var(--color-neutral);
         }
         .legend-row {
             cursor: pointer;
         }
         .legend-btn-bg {
-            fill: #ffffff;
-            stroke: #d1d5db;
+            fill: var(--color-paper);
+            stroke: var(--color-rule);
             stroke-width: 1;
         }
         .legend-row:hover .legend-btn-bg {
-            fill: #f3f4f6;
-            stroke: #9ca3af;
+            fill: var(--color-paper-3);
+            stroke: var(--color-rule-2);
         }
         .legend-row.hidden .legend-btn-bg {
-            fill: #f9fafb;
+            fill: var(--color-paper-2);
         }
         .legend-row.hidden .legend-text {
             fill: #9ca3af;
@@ -80,13 +299,27 @@
     </style>
 </head>
 <body>
-<h1>2026 Honda Indy 200 at Mid-Ohio</h1>
+<div class="wrap">
+    <div class="utility-bar">
+        <a class="back-link" href="indycar-data-index.html">← INDYCAR Data Analysis</a>
+        <span class="season-tag">2026 Season</span>
+    </div>
+    <h1>Honda Indy 200 at Mid-Ohio</h1>
+</div>
 
-<h2 style="text-decoration: underline;">Smoothed Race Pace</h2>
-<div id="chart"></div>
+<div class="wrap">
+    <div class="section-label"><h2>Smoothed Race Pace</h2></div>
+    <div class="chart-panel"><div id="chart"></div></div>
 
-<h2 style="text-decoration: underline;">Global Race Pace (Sorted by Mean Lap Time)</h2>
-<div id="boxplot-chart" style="cursor: crosshair"></div>
+    <div class="section-label"><h2>Global Race Pace</h2></div>
+    <div class="chart-panel"><div id="boxplot-chart" style="cursor: crosshair"></div></div>
+
+    <div class="section-label"><h2>Fastest Lap Leaderboard</h2></div>
+    <div class="chart-panel"><div id="fastest-lap-chart" style="cursor: crosshair"></div></div>
+
+    <div class="section-label"><h2>Consistency vs. Pace</h2></div>
+    <div class="chart-panel"><div id="consistency-chart" style="cursor: crosshair"></div></div>
+</div>
 
 <script>
     // Data Setup
@@ -1272,8 +1505,8 @@
     const sumData = d3.group(data, d => d.car);
 
     // Dimensions and Margins
-    const margin = { top: 40, right: 265, bottom: 50, left: 60 };
-    const width = 1600 - margin.left - margin.right;
+    const margin = { top: 40, right: 350, bottom: 50, left: 60 };
+    const width = 1685 - margin.left - margin.right;
     const height = 800 - margin.top - margin.bottom;
 
     // Append SVG container
@@ -1455,9 +1688,9 @@
         .attr("y", 0)
         .attr("width", 96)
         .attr("height", 24)
-        .attr("rx", 4)
-        .attr("fill", "#f3f4f6")
-        .attr("stroke", "#d1d5db");
+        .attr("rx", 0)
+        .attr("fill", "#e3e6ea")
+        .attr("stroke", "#c7cbd1");
 
     const toggleButtonText = toggleButton.append("text")
         .attr("x", 48)
@@ -1481,9 +1714,9 @@
         .attr("y", 0)
         .attr("width", 96)
         .attr("height", 24)
-        .attr("rx", 4)
-        .attr("fill", "#f3f4f6")
-        .attr("stroke", "#d1d5db");
+        .attr("rx", 0)
+        .attr("fill", "#e3e6ea")
+        .attr("stroke", "#c7cbd1");
 
     const compareButtonText = compareButton.append("text")
         .attr("x", 48)
@@ -1503,7 +1736,7 @@
         .attr("transform", `translate(0, ${legendRowsTop})`);
 
     // Row sizing: wide enough for the longest driver name plus a color swatch
-    const legendRowWidth = 226;
+    const legendRowWidth = 310;
     const legendRowHeight = 22;
 
     carKeys.forEach((carNumber, index) => {
@@ -1529,7 +1762,7 @@
             .attr("y", -6)
             .attr("width", legendRowWidth)
             .attr("height", legendRowHeight)
-            .attr("rx", 4);
+            .attr("rx", 0);
 
         legendRow.append("line")
             .attr("class", "legend-swatch")
@@ -1691,9 +1924,9 @@
     // The in-progress/last-drawn selection box
     const selectionRect = svg.append("rect")
         .attr("class", "compare-selection")
-        .attr("fill", "#3b82f6")
+        .attr("fill", "#c2410c")
         .attr("fill-opacity", 0.12)
-        .attr("stroke", "#3b82f6")
+        .attr("stroke", "#c2410c")
         .attr("stroke-width", 1.5)
         .attr("stroke-dasharray", "4,3")
         .style("display", "none")
@@ -1854,14 +2087,14 @@
         if (on) {
             detachZoomBehavior();
             attachCompareBehavior();
-            compareButtonRect.attr("fill", "#dbeafe").attr("stroke", "#60a5fa");
+            compareButtonRect.attr("fill", "#ffedd5").attr("stroke", "#f0975a");
             compareButtonText.text("Exit Compare");
             hintText.style("display", null)
                 .text("Drag a box over the lap range you want to compare\u2026");
         } else {
             detachCompareBehavior();
             attachZoomBehavior();
-            compareButtonRect.attr("fill", "#f3f4f6").attr("stroke", "#d1d5db");
+            compareButtonRect.attr("fill", "#e3e6ea").attr("stroke", "#c7cbd1");
             compareButtonText.text("Compare Laps");
             hintText.style("display", null)
                 .text("Scroll/pinch to zoom, drag to pan, double-click to reset");
@@ -1908,11 +2141,11 @@
     // "Car N - Full Name" legend label would be too wide for 25+ categories.
     function shortDriverLabel(carNumber) {
         const full = driverNames[carNumber] || `Car ${carNumber}`;
-        const isRookie = / \(R\)$/.test(full);
+        //const isRookie = / \(R\)$/.test(full);
         const base = full.replace(/ \(R\)$/, "");
         const parts = base.split(" ");
         const surname = parts[parts.length - 1];
-        return isRookie ? `${surname} (R)` : surname;
+        return surname;
     }
 
     // Two-tailed z-score such that +/- Z_99 sigma around the mean covers
@@ -1936,7 +2169,7 @@
         const whiskerHigh = within.length ? within[within.length - 1] : sorted[n - 1];
         const outliers = sorted.filter(v => v < lowerFence || v > upperFence);
 
-        return { mean, median, q1, q3, whiskerLow, whiskerHigh, outliers, n };
+        return { mean, median, std, q1, q3, whiskerLow, whiskerHigh, outliers, n };
     }
 
     const boxStatsByCar = new Map();
@@ -2027,7 +2260,7 @@
             .attr("text-anchor", "middle")
             .attr("x", boxWidth / 2)
             .attr("y", boxHeight + 80)
-            .text("Driver");
+            .text("Driver (Sorted by Mean Lap Time)");
 
         boxSvg.append("text")
             .attr("class", "axis-label")
@@ -2130,24 +2363,469 @@
         });
     }
 
+    /* ══════════════════════════════════════════════════════════════
+       CHART 3 · FASTEST LAP LEADERBOARD
+       Single quickest clean lap per driver (pit/caution laps already
+       excluded by filterRaceData, same methodology as the other charts),
+       ranked fastest-to-slowest, bars encode the gap back to the
+       outright fastest lap of the race.
+       ══════════════════════════════════════════════════════════════ */
+    (function renderFastestLapChart() {
+        const container = d3.select("#fastest-lap-chart");
+        container.selectAll("*").remove();
+
+        const fastestByCar = carKeys
+            .map(car => {
+                const laps = sumData.get(car) || [];
+                if (laps.length === 0) return null;
+                const best = laps.reduce((a, b) => (a.time < b.time ? a : b));
+                return { car, time: best.time, lap: best.lap };
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.time - b.time);
+
+        if (fastestByCar.length === 0) {
+            container.append("p")
+                .attr("class", "axis-label")
+                .style("padding", "20px")
+                .text("Not enough data to build a fastest-lap leaderboard for this race.");
+            return;
+        }
+
+        const outrightFastest = fastestByCar[0].time;
+
+        const flMargin = { top: 10, right: 140, bottom: 55, left: 190 };
+        const flRowHeight = 26;
+        const flWidth = 900;
+        const flHeight = fastestByCar.length * flRowHeight;
+
+        const flSvg = container.append("svg")
+                .attr("width", flWidth + flMargin.left + flMargin.right)
+                .attr("height", flHeight + flMargin.top + flMargin.bottom)
+            .append("g")
+                .attr("transform", `translate(${flMargin.left},${flMargin.top})`);
+
+        const flMaxDelta = d3.max(fastestByCar, d => d.time - outrightFastest) || 1;
+        const flX = d3.scaleLinear()
+            .domain([0, flMaxDelta * 1.12])
+            .range([0, flWidth]);
+
+        const flY = d3.scaleBand()
+            .domain(fastestByCar.map(d => d.car))
+            .range([0, flHeight])
+            .padding(0.28);
+
+        // Gridlines (delta seconds)
+        flSvg.append("g")
+            .attr("class", "grid")
+            .call(d3.axisBottom(flX).ticks(6).tickSize(flHeight).tickFormat(""))
+            .attr("transform", `translate(0,0)`)
+            .lower();
+
+        const flRows = flSvg.selectAll(".fl-row")
+            .data(fastestByCar)
+            .enter()
+            .append("g")
+            .attr("class", "fl-row")
+            .attr("transform", d => `translate(0, ${flY(d.car)})`);
+
+        // Driver name, left of the axis
+        flRows.append("text")
+            .attr("class", "axis-label")
+            .attr("x", -12)
+            .attr("y", flY.bandwidth() / 2)
+            .attr("dy", "0.32em")
+            .attr("text-anchor", "end")
+            .style("font-weight", 600)
+            .text(d => `${shortDriverLabel(d.car)}`);
+
+        // Bar
+        flRows.append("rect")
+            .attr("x", 0)
+            .attr("y", 2)
+            .attr("height", flY.bandwidth() - 4)
+            .attr("width", d => Math.max(3, flX(d.time - outrightFastest)))
+            .attr("fill", d => colorScale(d.car))
+            .attr("fill-opacity", 0.85)
+            .attr("rx", 0)
+            .append("title")
+                .text(d =>
+                    `Car ${d.car} - ${driverNames[d.car] || "Unknown"}\n` +
+                    `Fastest lap: ${d.time.toFixed(3)}s (lap ${d.lap})\n` +
+                    (d.time === outrightFastest ? "Outright fastest lap of the race" : `+${(d.time - outrightFastest).toFixed(3)}s off the pace`)
+                );
+
+        // Value label at bar end
+        flRows.append("text")
+            .attr("class", "axis-label")
+            .attr("x", d => flX(d.time - outrightFastest) + 8)
+            .attr("y", flY.bandwidth() / 2)
+            .attr("dy", "0.32em")
+            .text(d => d.time === outrightFastest
+                ? `${d.time.toFixed(3)}s (fastest lap)`
+                : `${d.time.toFixed(3)}s (+${(d.time - outrightFastest).toFixed(3)}s)`);
+
+        // X axis (delta scale)
+        flSvg.append("g")
+            .attr("class", "axis-label")
+            .attr("transform", `translate(0, ${flHeight + 10})`)
+            .call(d3.axisBottom(flX).ticks(6).tickFormat(d => `+${d.toFixed(1)}s`));
+
+        flSvg.append("text")
+            .attr("class", "axis-label")
+            .attr("x", flWidth / 2)
+            .attr("y", flHeight + 52)
+            .attr("text-anchor", "middle")
+            .text("Gap (s)");
+    })();
+
+    /* ══════════════════════════════════════════════════════════════
+       CHART 4 · CONSISTENCY VS. PACE
+       Per-driver scatter using the same mean/std already computed for
+       the box plot: x = average clean-lap pace, y = lap-to-lap
+       variability. Bottom-left is the sweet spot — fast AND repeatable.
+       ══════════════════════════════════════════════════════════════ */
+    (function renderConsistencyChart() {
+        const container = d3.select("#consistency-chart");
+        container.selectAll("*").remove();
+
+        const points = carKeys
+            .map(car => {
+                const stats = boxStatsByCar.get(car);
+                if (!stats || stats.n < 2) return null;
+                return { car, mean: stats.mean, std: stats.std, n: stats.n };
+            })
+            .filter(Boolean);
+
+        if (points.length === 0) {
+            container.append("p")
+                .attr("class", "axis-label")
+                .style("padding", "20px")
+                .text("Not enough data to build a consistency chart for this race.");
+            return;
+        }
+
+        const csMargin = { top: 30, right: 40, bottom: 60, left: 85 };
+        const csWidth = 900;
+        const csHeight = 560;
+
+        const csSvg = container.append("svg")
+                .attr("width", csWidth + csMargin.left + csMargin.right)
+                .attr("height", csHeight + csMargin.top + csMargin.bottom)
+            .append("g")
+                .attr("transform", `translate(${csMargin.left},${csMargin.top})`);
+
+        const meanExtent = d3.extent(points, d => d.mean);
+        const stdExtent = d3.extent(points, d => d.std);
+        const meanPad = (meanExtent[1] - meanExtent[0]) * 0.12 || 0.5;
+        const stdPad = (stdExtent[1] - stdExtent[0]) * 0.15 || 0.05;
+
+        const csX = d3.scaleLinear()
+            .domain([meanExtent[0] - meanPad, meanExtent[1] + meanPad])
+            .range([0, csWidth]);
+
+        const csY = d3.scaleLinear()
+            .domain([stdExtent[0] - stdPad, stdExtent[1] + stdPad])
+            .range([csHeight, 0]);
+
+        const medianMean = d3.median(points, d => d.mean);
+        const medianStd = d3.median(points, d => d.std);
+
+        // Gridlines
+        csSvg.append("g")
+            .attr("class", "grid")
+            .attr("transform", `translate(0, ${csHeight})`)
+            .call(d3.axisBottom(csX).ticks(8).tickSize(-csHeight).tickFormat(""));
+        csSvg.append("g")
+            .attr("class", "grid")
+            .call(d3.axisLeft(csY).ticks(6).tickSize(-csWidth).tickFormat(""));
+
+        // Quadrant divider lines (medians)
+        csSvg.append("line")
+            .attr("x1", csX(medianMean)).attr("x2", csX(medianMean))
+            .attr("y1", 0).attr("y2", csHeight)
+            .attr("stroke", "#4b4f5c")
+            .attr("stroke-dasharray", "4,3");
+        csSvg.append("line")
+            .attr("x1", 0).attr("x2", csWidth)
+            .attr("y1", csY(medianStd)).attr("y2", csY(medianStd))
+            .attr("stroke", "#4b4f5c")
+            .attr("stroke-dasharray", "4,3");
+
+        // Quadrant captions
+        const quadrantLabel = (x, y, anchor, text) => {
+            csSvg.append("text")
+                .attr("class", "axis-label")
+                .attr("x", x).attr("y", y)
+                .attr("text-anchor", anchor)
+                .style("fill", "#6b7280")
+                .style("letter-spacing", "0.08em")
+                .style("text-transform", "uppercase")
+                .style("font-size", "10px")
+                .text(text);
+        };
+        quadrantLabel(8, 14, "start", "Fast & inconsistent");
+        quadrantLabel(csWidth - 8, 14, "end", "Off the pace & inconsistent");
+        quadrantLabel(8, csHeight - 8, "start", "Fast & consistent");
+        quadrantLabel(csWidth - 8, csHeight - 8, "end", "Off the pace & consistent");
+
+        // Axes
+        csSvg.append("g")
+            .attr("class", "axis-label")
+            .attr("transform", `translate(0, ${csHeight})`)
+            .call(d3.axisBottom(csX).ticks(8).tickFormat(d => `${d.toFixed(1)}s`));
+        csSvg.append("g")
+            .attr("class", "axis-label")
+            .call(d3.axisLeft(csY).ticks(6).tickFormat(d => `${d.toFixed(2)}s`));
+
+        csSvg.append("text")
+            .attr("class", "axis-label")
+            .attr("x", csWidth / 2)
+            .attr("y", csHeight + 42)
+            .attr("text-anchor", "middle")
+            .text("Average clean-lap pace (lower = faster)");
+        csSvg.append("text")
+            .attr("class", "axis-label")
+            .attr("transform", "rotate(-90)")
+            .attr("x", -csHeight / 2)
+            .attr("y", -65)
+            .attr("text-anchor", "middle")
+            .text("Lap-to-lap variability, std. dev. (lower = more consistent)");
+
+        // Points
+        const fastestCar = points.reduce((a, b) => (a.mean < b.mean ? a : b)).car;
+        const slowestCar = points.reduce((a, b) => (a.mean > b.mean ? a : b)).car;
+        const mostConsistentCar = points.reduce((a, b) => (a.std < b.std ? a : b)).car;
+        const leastConsistentCar = points.reduce((a, b) => (a.std > b.std ? a : b)).car;
+        const calloutCars = new Set([fastestCar, slowestCar, mostConsistentCar, leastConsistentCar]);
+
+        const csPoint = csSvg.selectAll(".cs-point")
+            .data(points)
+            .enter()
+            .append("g")
+            .attr("class", "cs-point")
+            .attr("transform", d => `translate(${csX(d.mean)}, ${csY(d.std)})`);
+
+        csPoint.append("circle")
+            .attr("r", d => calloutCars.has(d.car) ? 7 : 5)
+            .attr("fill", d => colorScale(d.car))
+            .attr("stroke", "#f7f8fa")
+            .attr("stroke-width", 1.25)
+            .append("title")
+                .text(d =>
+                    `Car ${d.car} - ${driverNames[d.car] || "Unknown"}\n` +
+                    `Avg. clean-lap pace: ${d.mean.toFixed(3)}s\n` +
+                    `Consistency (std. dev.): ${d.std.toFixed(3)}s over ${d.n} laps`
+                );
+
+        // Direct labels only for the notable extremes, to keep 25+ points legible.
+        // Fixed offsets can land a label on top of a nearby, unrelated point, so
+        // each label instead picks whichever of 4 candidate positions (right,
+        // left, above, below) collides with the fewest other points/labels.
+        const allPx = points.map(p => ({ x: csX(p.mean), y: csY(p.std) }));
+        const placedBoxes = [];
+        const pointRadius = 7;
+
+        function boxesOverlap(a, b) {
+            return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+        }
+
+        function scoreCandidate(box, ownIndex) {
+            if (box.x0 < 0 || box.x1 > csWidth || box.y0 < 0 || box.y1 > csHeight) return Infinity;
+            let collisions = 0;
+            allPx.forEach((p, i) => {
+                if (i === ownIndex) return;
+                if (p.x > box.x0 - pointRadius && p.x < box.x1 + pointRadius &&
+                    p.y > box.y0 - pointRadius && p.y < box.y1 + pointRadius) collisions++;
+            });
+            placedBoxes.forEach(b => { if (boxesOverlap(box, b)) collisions += 3; });
+            return collisions;
+        }
+
+        calloutCars.forEach(car => {
+            const idx = points.findIndex(p => p.car === car);
+            const d = points[idx];
+            const tags = [];
+            if (car === fastestCar) tags.push("(+)");
+            if (car === mostConsistentCar) tags.push("(^)");
+            if (car === slowestCar) tags.push("(-)");
+            if (car === leastConsistentCar) tags.push("(*)");
+            const label = `${shortDriverLabel(car)} ${tags.join("")}`.trim();
+            const px = csX(d.mean), py = csY(d.std);
+            const w = label.length * 6.3 + 6;
+            const h = 14;
+
+            const candidates = [
+                { anchor: "start",  x: px + 10, y: py + 4,  x0: px + 8,          x1: px + 8 + w,      y0: py - 10, y1: py + 4 },
+                { anchor: "end",    x: px - 10, y: py + 4,  x0: px - 8 - w,      x1: px - 8,          y0: py - 10, y1: py + 4 },
+                { anchor: "middle", x: px,      y: py - 14, x0: px - w / 2,      x1: px + w / 2,      y0: py - 24, y1: py - 10 },
+                { anchor: "middle", x: px,      y: py + 22, x0: px - w / 2,      x1: px + w / 2,      y0: py + 10, y1: py + 24 }
+            ];
+
+            let best = candidates[0];
+            let bestScore = Infinity;
+            candidates.forEach(c => {
+                const s = scoreCandidate(c, idx);
+                if (s < bestScore) { bestScore = s; best = c; }
+            });
+            placedBoxes.push(best);
+
+            csSvg.append("text")
+                .attr("class", "axis-label")
+                .attr("x", best.x)
+                .attr("y", best.y)
+                .attr("text-anchor", best.anchor)
+                .style("font-weight", 600)
+                .text(label);
+        });
+
+        // Legend — how the quadrants are drawn, and what the symbols mean.
+        container.append("div")
+            .attr("class", "chart-legend")
+            .html(
+                '<div><strong>Quadrants:</strong> vertical dashed line = median average pace ' +
+                '\u00b7 horizontal dashed line = median lap-to-lap variability</div>' +
+                '<div class="legend-symbols">' +
+                '<strong>Symbols:</strong>' +
+                '<span><b>(+)</b> = fastest average pace</span>' +
+                '<span><b>(-)</b> = slowest average pace</span>' +
+                '<span><b>(^)</b> = most consistent</span>' +
+                '<span><b>(*)</b> = least consistent</span>' +
+                '</div>'
+            );
+    })();
+
+    /* ══════════════════════════════════════════════════════════════
+       MAXIMIZE BUTTON — one added to every .chart-panel. Rather than
+       the native Fullscreen API (whose ":fullscreen" element sizing/
+       positioning behaves differently enough across browsers — Firefox
+       in particular — that centered content kept ending up pinned to
+       the top-left), this moves the chart's own div into a plain
+       fixed-position overlay we fully control, then moves it back on
+       close. Centering and scale-to-fit are just normal CSS/JS math
+       against the viewport, with no browser-specific fullscreen
+       behavior involved at all.
+       ══════════════════════════════════════════════════════════════ */
+    (function attachMaximizeButtons() {
+        const expandIcon = '<svg width="12" height="12" viewBox="0 0 13 13" fill="none" aria-hidden="true">' +
+            '<path d="M1 4.5V1H4.5M8.5 1H12V4.5M12 8.5V12H8.5M4.5 12H1V8.5" stroke="currentColor" stroke-width="1.3"/></svg>';
+        const BUFFER = 56; // breathing room around the scaled chart, in px
+
+        const overlay = document.createElement("div");
+        overlay.className = "chart-maximize-overlay";
+        const inner = document.createElement("div");
+        inner.className = "maximize-inner";
+        overlay.appendChild(inner);
+
+        const closeBtn = document.createElement("button");
+        closeBtn.type = "button";
+        closeBtn.className = "chart-maximize-close";
+        closeBtn.innerHTML = "&times; <span>Close</span>";
+        overlay.appendChild(closeBtn);
+
+        const titleEl = document.createElement("div");
+        titleEl.className = "chart-maximize-title";
+        overlay.appendChild(titleEl);
+
+        document.body.appendChild(overlay);
+
+        let homeParent = null;
+        let homeNext = null;
+        let activeContent = null;
+        let activeBtn = null;
+
+        function fit() {
+            if (!activeContent) return;
+            activeContent.style.transform = "translate(-50%, -50%)";
+            const availW = window.innerWidth - BUFFER * 2;
+            const availH = window.innerHeight - BUFFER * 2;
+            const w = activeContent.scrollWidth;
+            const h = activeContent.scrollHeight;
+            if (!w || !h) return;
+            const scale = Math.min(availW / w, availH / h, 1);
+            activeContent.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        }
+
+        function openFor(content, btn, title) {
+            if (activeContent) closeOverlay();
+            homeParent = content.parentNode;
+            homeNext = content.nextSibling;
+            inner.appendChild(content);
+            overlay.classList.add("is-open");
+            titleEl.innerHTML = title || "";
+            document.documentElement.style.overflow = "hidden";
+            document.body.style.overflow = "hidden";
+            activeContent = content;
+            activeBtn = btn;
+            if (btn) btn.querySelector("span").textContent = "Exit fullscreen";
+            requestAnimationFrame(() => requestAnimationFrame(fit));
+        }
+
+        function closeOverlay() {
+            if (!activeContent) return;
+            activeContent.style.transform = "";
+            homeParent.insertBefore(activeContent, homeNext);
+            overlay.classList.remove("is-open");
+            titleEl.innerHTML = "";
+            document.documentElement.style.overflow = "";
+            document.body.style.overflow = "";
+            if (activeBtn) activeBtn.querySelector("span").textContent = "Fullscreen";
+            activeContent = null;
+            activeBtn = null;
+        }
+
+        closeBtn.addEventListener("click", closeOverlay);
+        overlay.addEventListener("click", (e) => { if (e.target === overlay) closeOverlay(); });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeOverlay(); });
+        window.addEventListener("resize", fit);
+
+        document.querySelectorAll(".chart-panel").forEach(panel => {
+            const content = panel.querySelector(":scope > div[id]");
+            if (!content) return;
+
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "fullscreen-btn";
+            btn.innerHTML = expandIcon + "<span>Fullscreen</span>";
+
+            // Reuse the page's own numbered section heading ("01", "Smoothed
+            // Race Pace") as the maximized view's title, so it always stays
+            // in sync with what's on the page.
+            const sectionLabel = panel.previousElementSibling;
+            let title = "";
+            if (sectionLabel && sectionLabel.classList.contains("section-label")) {
+                const idx = sectionLabel.querySelector(".idx");
+                const h2 = sectionLabel.querySelector("h2");
+                title = (idx ? `<span class="idx">${idx.textContent}</span>` : "") + (h2 ? h2.textContent : "");
+            }
+
+            btn.addEventListener("click", () => {
+                if (activeContent === content) closeOverlay();
+                else openFor(content, btn, title);
+            });
+
+            panel.insertBefore(btn, panel.firstChild);
+        });
+    })();
+
 </script>
     <div class="data-source-attribution" style="
             position: fixed;
-            bottom: 10px;
-            right: 10px;
-            font-size: 0.75rem;
-            color: #666;
-            background: rgba(255, 255, 255, 0.8);
-            padding: 5px 10px;
-            border-radius: 4px;
-            border: 1px solid #ddd;
+            bottom: 12px;
+            right: 12px;
+            font-size: 0.72rem;
+            letter-spacing: 0.03em;
+            color: #6b7280;
+            background: rgba(247, 248, 250, 0.92);
+            padding: 6px 12px;
+            border-radius: 0;
+            border: 1px solid #c7cbd1;
             z-index: 1000;
-            font-family: sans-serif;">
-            <i class="fas fa-database" style="margin-right: 5px;"></i>
-            Source: 
-            <a href="https://www.indycar.com/results/ntt-indycar-series/2026/honda-indy-200-at-mid-ohio/race" 
-            target="_blank" 
-            style="color: #000000; text-decoration: none; font-weight: bold;">
+            font-family: 'JetBrains Mono', ui-monospace, monospace;">
+            Created by JP Burger | Source:
+            <a href="https://www.indycar.com/results/ntt-indycar-series/2026/honda-indy-200-at-mid-ohio/race"
+            target="_blank"
+            style="color: #b23a0b; text-decoration: none; font-weight: 600; border-bottom: 1px solid #b23a0b;">
             NTT INDYCAR Series
             </a>
     </div>
